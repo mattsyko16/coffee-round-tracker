@@ -1,384 +1,58 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Coffee Round Tracker</title>
-  <style>
-    :root {
-      --bg: #f6f1e8;
-      --card: #fffaf2;
-      --text: #2f2118;
-      --muted: #7b6b5d;
-      --accent: #8b5e34;
-      --accent-dark: #5f3d22;
-      --border: #e3d4c3;
-      --danger: #b64235;
-      --good: #2f7d4f;
-    }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: linear-gradient(135deg, #f6f1e8, #ead7c0);
-      color: var(--text);
-      min-height: 100vh;
-      padding: 18px;
-    }
-    .app { max-width: 980px; margin: 0 auto; }
-    header { text-align: center; margin-bottom: 18px; }
-    h1 { margin: 8px 0 4px; font-size: clamp(2rem, 6vw, 3.2rem); }
-    .subtitle { color: var(--muted); margin: 0; }
-    .grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 14px; }
-    .card {
-      grid-column: span 12;
-      background: rgba(255,250,242,0.94);
-      border: 1px solid var(--border);
-      border-radius: 18px;
-      padding: 16px;
-      box-shadow: 0 10px 30px rgba(58, 37, 22, 0.12);
-    }
-    @media (min-width: 780px) { .half { grid-column: span 6; } }
-    h2 { margin: 0 0 12px; font-size: 1.25rem; }
-    input, button, textarea {
-      font: inherit;
-      border-radius: 12px;
-      border: 1px solid var(--border);
-    }
-    input, textarea {
-      width: 100%;
-      padding: 11px 12px;
-      background: white;
-      color: var(--text);
-    }
-    button {
-      padding: 11px 14px;
-      background: var(--accent);
-      color: white;
-      border: none;
-      cursor: pointer;
-      font-weight: 700;
-    }
-    button:hover { background: var(--accent-dark); }
-    button.secondary { background: #e7d8c7; color: var(--text); }
-    button.secondary:hover { background: #d8c1a9; }
-    button.danger { background: var(--danger); }
-    button.small { padding: 7px 10px; border-radius: 10px; font-size: 0.9rem; }
-    .row { display: flex; gap: 8px; align-items: center; }
-    .row > * { flex: 1; }
-    .people-list { display: grid; gap: 8px; }
-    .person-row {
-      display: grid;
-      grid-template-columns: auto 1fr auto;
-      gap: 10px;
-      align-items: center;
-      padding: 10px;
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      background: white;
-    }
-    .person-row input[type="checkbox"] { width: 22px; height: 22px; }
-    .name { font-weight: 750; }
-    .muted { color: var(--muted); font-size: 0.92rem; }
-    .winner {
-      text-align: center;
-      padding: 18px;
-      border: 2px dashed var(--accent);
-      border-radius: 18px;
-      background: #fff4e4;
-      margin: 12px 0;
-    }
-    .winner .big { font-size: clamp(2rem, 8vw, 4rem); font-weight: 900; }
-    .actions { display: flex; flex-wrap: wrap; gap: 8px; }
-    table { width: 100%; border-collapse: collapse; font-size: 0.94rem; }
-    th, td { text-align: left; padding: 9px 7px; border-bottom: 1px solid var(--border); vertical-align: top; }
-    th { color: var(--muted); font-size: 0.85rem; }
-    .scroll { overflow-x: auto; }
-    .pill { display: inline-block; padding: 3px 8px; border-radius: 99px; background: #ead7c0; margin: 2px; }
-    .good { color: var(--good); font-weight: 800; }
-    details summary { cursor: pointer; font-weight: 800; color: var(--accent-dark); }
-    textarea { min-height: 90px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.85rem; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Coffee Round Tracker Shared</title>
+<style>
+:root{--bg:#f5f1ec;--card:#fff;--ink:#261d18;--muted:#74675e;--accent:#7b4a2d;--accent2:#ead8c7;--danger:#b33a3a;--ok:#2d7b46;--border:#ded1c5;--warn:#fff1cf}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;padding:16px}.wrap{max-width:980px;margin:0 auto}h1{margin:4px 0 2px;font-size:2rem}h2{margin:0 0 12px;font-size:1.25rem}p{color:var(--muted);line-height:1.45}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}.card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:16px;margin-bottom:14px;box-shadow:0 8px 24px rgba(50,30,15,.05)}input,button{font:inherit;border-radius:12px;padding:10px 12px}input{width:100%;border:1px solid var(--border);background:#fffaf6;margin:6px 0}button{border:0;background:var(--accent);color:#fff;font-weight:700;cursor:pointer;margin:4px 4px 4px 0}button.secondary{background:#626d79}button.ghost{background:var(--accent2);color:var(--ink)}button.danger{background:var(--danger)}button:disabled{opacity:.55;cursor:not-allowed}.status{display:inline-block;padding:6px 10px;border-radius:999px;background:var(--warn);font-size:.9rem;margin:6px 0 14px}.status.online{background:#dceddf;color:#1f5c31}.status.error{background:#f7dcdc;color:#7a2222}.person-row,.tick-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px dashed var(--border)}.tick-row label{display:flex;align-items:center;gap:10px;width:100%;cursor:pointer}.tick-row input{width:auto;transform:scale(1.2)}.winner{font-size:1.55rem;padding:14px;background:#fff5e9;border:1px solid var(--border);border-radius:16px;margin-top:10px}.small{font-size:.85rem;color:var(--muted)}.hidden{display:none}table{width:100%;border-collapse:collapse;font-size:.94rem}th,td{text-align:left;padding:9px 7px;border-bottom:1px solid var(--border);vertical-align:top}th{font-size:.82rem;color:var(--muted)}.pos{color:var(--ok);font-weight:700}.neg{color:var(--danger);font-weight:700}.setup{border:2px dashed var(--accent)}
+</style>
 </head>
 <body>
-  <div class="app">
-    <header>
-      <h1>☕ Coffee Round Tracker</h1>
-      <p class="subtitle">Tracks who is in, who has paid, and who fairly owes the next round.</p>
-    </header>
-
-    <div class="grid">
-      <section class="card half">
-        <h2>Who’s in today?</h2>
-        <div id="peopleList" class="people-list"></div>
-        <div style="height:10px"></div>
-        <div class="row">
-          <input id="newName" placeholder="Add name" />
-          <button onclick="addPerson()">Add</button>
-        </div>
-      </section>
-
-      <section class="card half">
-        <h2>Round</h2>
-        <label class="muted" for="roundCost">Optional total cost (£)</label>
-        <input id="roundCost" type="number" min="0" step="0.01" placeholder="e.g. 10.50" />
-        <div class="winner" id="winnerBox">
-          <div class="muted">Suggested buyer</div>
-          <div class="big" id="suggestedBuyer">—</div>
-          <div class="muted" id="suggestedReason">Tick who’s in, then calculate.</div>
-        </div>
-        <div class="actions">
-          <button onclick="calculateBuyer()">Who’s buying?</button>
-          <button class="secondary" onclick="recordRound()">Record round</button>
-          <button class="secondary" onclick="selectAll(true)">All in</button>
-          <button class="secondary" onclick="selectAll(false)">Clear</button>
-        </div>
-      </section>
-
-      <section class="card">
-        <h2>Fairness table</h2>
-        <div class="scroll">
-          <table>
-            <thead><tr><th>Name</th><th>Attended</th><th>Bought</th><th>Spent</th><th>Fair share</th><th>Balance</th></tr></thead>
-            <tbody id="statsBody"></tbody>
-          </table>
-        </div>
-        <p class="muted">Balance = spent minus fair share. Lowest balance among today’s attendees is most due to buy.</p>
-      </section>
-
-      <section class="card">
-        <h2>History</h2>
-        <div class="actions" style="margin-bottom:10px">
-          <button class="secondary" onclick="undoLast()">Undo last round</button>
-          <button class="danger" onclick="resetAll()">Reset all</button>
-        </div>
-        <div class="scroll">
-          <table>
-            <thead><tr><th>Date</th><th>Attendees</th><th>Buyer</th><th>Cost</th></tr></thead>
-            <tbody id="historyBody"></tbody>
-          </table>
-        </div>
-      </section>
-
-      <section class="card">
-        <details>
-          <summary>Backup / restore</summary>
-          <p class="muted">Copy this backup somewhere safe, or paste a backup and restore it.</p>
-          <textarea id="backupBox"></textarea>
-          <div class="actions" style="margin-top:8px">
-            <button class="secondary" onclick="exportBackup()">Export backup</button>
-            <button class="secondary" onclick="restoreBackup()">Restore backup</button>
-          </div>
-        </details>
-      </section>
-    </div>
-  </div>
-
-  <script>
-    const STORAGE_KEY = "coffeeRoundTrackerV2";
-
-    let data = loadData();
-    let lastSuggestion = null;
-
-    function defaultData() {
-      return {
-        people: [
-          { id: cryptoId(), name: "Matt", active: true },
-          { id: cryptoId(), name: "Kris", active: true },
-          { id: cryptoId(), name: "Dan", active: true }
-        ],
-        history: []
-      };
-    }
-
-    function cryptoId() {
-      return "p_" + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
-    }
-
-    function loadData() {
-      try {
-        const saved = localStorage.getItem(STORAGE_KEY);
-        return saved ? JSON.parse(saved) : defaultData();
-      } catch {
-        return defaultData();
-      }
-    }
-
-    function saveData() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-      render();
-    }
-
-    function money(n) { return "£" + Number(n || 0).toFixed(2); }
-
-    function addPerson() {
-      const input = document.getElementById("newName");
-      const name = input.value.trim();
-      if (!name) return;
-      if (data.people.some(p => p.name.toLowerCase() === name.toLowerCase())) {
-        alert("That name already exists.");
-        return;
-      }
-      data.people.push({ id: cryptoId(), name, active: true });
-      input.value = "";
-      saveData();
-    }
-
-    function removePerson(id) {
-      const person = data.people.find(p => p.id === id);
-      if (!person) return;
-      if (!confirm(`Remove ${person.name}? Their old history stays, but they won't appear in new rounds.`)) return;
-      person.removed = true;
-      person.active = false;
-      saveData();
-    }
-
-    function toggleActive(id, checked) {
-      const p = data.people.find(x => x.id === id);
-      if (p) p.active = checked;
-      saveData();
-    }
-
-    function selectAll(value) {
-      data.people.filter(p => !p.removed).forEach(p => p.active = value);
-      saveData();
-    }
-
-    function getActivePeople() { return data.people.filter(p => !p.removed && p.active); }
-
-    function stats() {
-      const out = {};
-      data.people.forEach(p => out[p.id] = { name: p.name, attended: 0, bought: 0, spent: 0, fairShare: 0 });
-      data.history.forEach(r => {
-        const cost = Number(r.cost || 0);
-        const attendees = r.attendeeIds || [];
-        const split = attendees.length ? cost / attendees.length : 0;
-        attendees.forEach(id => {
-          if (!out[id]) out[id] = { name: r.attendeeNames?.[id] || "Unknown", attended: 0, bought: 0, spent: 0, fairShare: 0 };
-          out[id].attended += 1;
-          out[id].fairShare += split;
-        });
-        if (r.buyerId) {
-          if (!out[r.buyerId]) out[r.buyerId] = { name: r.buyerName || "Unknown", attended: 0, bought: 0, spent: 0, fairShare: 0 };
-          out[r.buyerId].bought += 1;
-          out[r.buyerId].spent += cost;
-        }
-      });
-      Object.values(out).forEach(s => s.balance = s.spent - s.fairShare);
-      return out;
-    }
-
-    function calculateBuyer() {
-      const active = getActivePeople();
-      if (active.length === 0) {
-        alert("Tick at least one person in today.");
-        return null;
-      }
-      const s = stats();
-      const ranked = active
-        .map(p => ({ ...p, balance: s[p.id]?.balance || 0, bought: s[p.id]?.bought || 0, attended: s[p.id]?.attended || 0 }))
-        .sort((a, b) => (a.balance - b.balance) || (a.bought - b.bought) || (a.attended - b.attended) || a.name.localeCompare(b.name));
-      lastSuggestion = ranked[0];
-      document.getElementById("suggestedBuyer").textContent = ranked[0].name;
-      document.getElementById("suggestedReason").textContent = `${ranked[0].name} has the lowest current balance among today’s attendees.`;
-      return ranked[0];
-    }
-
-    function recordRound() {
-      const buyer = lastSuggestion || calculateBuyer();
-      if (!buyer) return;
-      const active = getActivePeople();
-      const costInput = document.getElementById("roundCost");
-      let cost = parseFloat(costInput.value);
-      if (Number.isNaN(cost) || cost <= 0) cost = active.length; // fallback: 1 point per coffee/person
-      const attendeeNames = {};
-      data.people.forEach(p => attendeeNames[p.id] = p.name);
-      data.history.unshift({
-        date: new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }),
-        timestamp: new Date().toISOString(),
-        attendeeIds: active.map(p => p.id),
-        attendeeNames,
-        buyerId: buyer.id,
-        buyerName: buyer.name,
-        cost
-      });
-      lastSuggestion = null;
-      costInput.value = "";
-      saveData();
-      document.getElementById("suggestedBuyer").textContent = "—";
-      document.getElementById("suggestedReason").textContent = "Round recorded.";
-    }
-
-    function undoLast() {
-      if (!data.history.length) return;
-      if (!confirm("Undo the most recent round?")) return;
-      data.history.shift();
-      saveData();
-    }
-
-    function resetAll() {
-      if (!confirm("Reset all people and history?")) return;
-      localStorage.removeItem(STORAGE_KEY);
-      data = defaultData();
-      lastSuggestion = null;
-      saveData();
-    }
-
-    function exportBackup() {
-      document.getElementById("backupBox").value = JSON.stringify(data, null, 2);
-    }
-
-    function restoreBackup() {
-      try {
-        const parsed = JSON.parse(document.getElementById("backupBox").value);
-        if (!parsed.people || !Array.isArray(parsed.people) || !Array.isArray(parsed.history)) throw new Error();
-        data = parsed;
-        saveData();
-        alert("Backup restored.");
-      } catch {
-        alert("That backup does not look valid.");
-      }
-    }
-
-    function render() {
-      const peopleList = document.getElementById("peopleList");
-      peopleList.innerHTML = "";
-      data.people.filter(p => !p.removed).forEach(p => {
-        const row = document.createElement("div");
-        row.className = "person-row";
-        row.innerHTML = `
-          <input type="checkbox" ${p.active ? "checked" : ""} onchange="toggleActive('${p.id}', this.checked)" />
-          <div><div class="name">${escapeHtml(p.name)}</div><div class="muted">${p.active ? "In today" : "Not in"}</div></div>
-          <button class="small danger" onclick="removePerson('${p.id}')">🗑️</button>
-        `;
-        peopleList.appendChild(row);
-      });
-
-      const s = stats();
-      const statsBody = document.getElementById("statsBody");
-      statsBody.innerHTML = "";
-      data.people.filter(p => !p.removed).forEach(p => {
-        const rowStats = s[p.id] || { attended: 0, bought: 0, spent: 0, fairShare: 0, balance: 0 };
-        const tr = document.createElement("tr");
-        tr.innerHTML = `<td><strong>${escapeHtml(p.name)}</strong></td><td>${rowStats.attended}</td><td>${rowStats.bought}</td><td>${money(rowStats.spent)}</td><td>${money(rowStats.fairShare)}</td><td class="${rowStats.balance >= 0 ? 'good' : ''}">${money(rowStats.balance)}</td>`;
-        statsBody.appendChild(tr);
-      });
-
-      const historyBody = document.getElementById("historyBody");
-      historyBody.innerHTML = "";
-      data.history.forEach(r => {
-        const names = (r.attendeeIds || []).map(id => r.attendeeNames?.[id] || data.people.find(p => p.id === id)?.name || "Unknown");
-        const tr = document.createElement("tr");
-        tr.innerHTML = `<td>${escapeHtml(r.date)}</td><td>${names.map(n => `<span class="pill">${escapeHtml(n)}</span>`).join(" ")}</td><td><strong>${escapeHtml(r.buyerName || "Unknown")}</strong></td><td>${money(r.cost)}</td>`;
-        historyBody.appendChild(tr);
-      });
-    }
-
-    function escapeHtml(str) {
-      return String(str).replace(/[&<>'"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[c]));
-    }
-
-    render();
-  </script>
+<div class="wrap">
+<h1>☕ Coffee Round Tracker</h1>
+<p>Shared online version. Fairness is based on attendance-adjusted debt score; cost is tracked separately.</p>
+<div id="status" class="status">Not connected</div>
+<section id="setupCard" class="card setup">
+<h2>Connect this phone/browser</h2>
+<p class="small">Enter your Supabase project details and the shared coffee-room details. The project URL/key and room name are saved in this browser; the passcode is not.</p>
+<input id="supabaseUrl" placeholder="Supabase Project URL">
+<input id="supabaseKey" placeholder="Supabase publishable / anon key">
+<input id="roomName" placeholder="Room name, e.g. ford-coffee">
+<input id="roomPass" type="password" placeholder="Shared room passcode">
+<button onclick="connectRoom()">Connect</button>
+<button class="ghost" onclick="createRoom()">Create room</button>
+</section>
+<div class="grid">
+<section class="card"><h2>People</h2><input id="newName" placeholder="Add person"><button onclick="addPerson()">Add Person</button><div id="peopleList"></div></section>
+<section class="card"><h2>Today's round</h2><p class="small">Tick who is actually in. The app picks whoever is furthest behind their fair share.</p><div id="attendanceList"></div><input id="roundCost" type="number" min="0" step="0.01" placeholder="Optional total cost (£)"><button onclick="recordRound()">Record Round</button><button class="ghost" onclick="previewBuyer()">Preview Buyer</button><button class="ghost" onclick="selectAll()">Everyone in</button><button class="ghost" onclick="clearTicks()">Clear</button><div id="winnerBox" class="winner hidden"></div></section>
+</div>
+<section class="card"><h2>Leaderboard</h2><div id="leaderboard"></div></section>
+<section class="card"><h2>History</h2><button class="secondary" onclick="exportBackup()">Export Backup</button><button class="secondary" onclick="document.getElementById('importFile').click()">Import Backup</button><input id="importFile" class="hidden" type="file" accept=".json" onchange="importBackup(event)"><button class="ghost" onclick="refreshNow()">Refresh now</button><button class="danger" onclick="resetAll()">Reset Room</button><div id="history"></div></section>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const DEFAULT_STATE={people:["Matt","Kris","Dan"],stats:{Matt:{attended:0,bought:0,spent:0},Kris:{attended:0,bought:0,spent:0},Dan:{attended:0,bought:0,spent:0}},history:[]};
+let sb=null,roomName="",roomPass="",state=clone(DEFAULT_STATE),version=0,pollTimer=null,busy=false;
+const $=id=>document.getElementById(id);function clone(x){return JSON.parse(JSON.stringify(x))}function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]))}function escAttr(s){return String(s).replace(/\\/g,"\\\\").replace(/'/g,"\\'")}function setStatus(text,type=""){const e=$("status");e.textContent=text;e.className="status"+(type?(" "+type):"")}
+function normaliseState(s){const n=s&&typeof s==="object"?s:clone(DEFAULT_STATE);n.people=Array.isArray(n.people)&&n.people.length?n.people:["Matt","Kris","Dan"];n.stats=n.stats||{};n.people.forEach(p=>{if(!n.stats[p])n.stats[p]={attended:0,bought:0,spent:0};n.stats[p].attended=Number(n.stats[p].attended||0);n.stats[p].bought=Number(n.stats[p].bought||0);n.stats[p].spent=Number(n.stats[p].spent||0)});n.history=Array.isArray(n.history)?n.history:[];return n}
+function saveConnection(){localStorage.setItem("coffeeSharedConfig",JSON.stringify({url:$("supabaseUrl").value.trim(),key:$("supabaseKey").value.trim(),room:$("roomName").value.trim()}))}function loadSavedConnection(){try{const x=JSON.parse(localStorage.getItem("coffeeSharedConfig")||"null");if(!x)return;$("supabaseUrl").value=x.url||"";$("supabaseKey").value=x.key||"";$("roomName").value=x.room||""}catch{}}
+function initClient(){const url=$("supabaseUrl").value.trim(),key=$("supabaseKey").value.trim();roomName=$("roomName").value.trim();roomPass=$("roomPass").value;if(!url||!key||!roomName||!roomPass)throw new Error("Fill in all connection fields.");sb=window.supabase.createClient(url,key,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}});saveConnection()}
+async function connectRoom(){try{initClient();setStatus("Connecting…");const res=await sb.rpc("coffee_get_room",{p_room_name:roomName,p_passcode:roomPass});if(res.error)throw res.error;const row=Array.isArray(res.data)?res.data[0]:res.data;if(!row)throw new Error("Room not found or passcode incorrect.");state=normaliseState(row.state);version=Number(row.version||0);$("setupCard").classList.add("hidden");setStatus("Connected · shared online","online");render();startPolling()}catch(e){console.error(e);setStatus(e.message||"Connection failed","error")}}
+async function createRoom(){try{initClient();setStatus("Creating room…");const res=await sb.rpc("coffee_create_room",{p_room_name:roomName,p_passcode:roomPass,p_initial_state:DEFAULT_STATE});if(res.error)throw res.error;await connectRoom()}catch(e){console.error(e);setStatus(e.message||"Could not create room","error")}}
+function startPolling(){if(pollTimer)clearInterval(pollTimer);pollTimer=setInterval(()=>refreshNow(true),5000)}
+async function refreshNow(silent=false){if(!sb||busy)return;try{const res=await sb.rpc("coffee_get_room",{p_room_name:roomName,p_passcode:roomPass});if(res.error)throw res.error;const row=Array.isArray(res.data)?res.data[0]:res.data;if(!row)throw new Error("Room unavailable.");const newVersion=Number(row.version||0);if(newVersion!==version){state=normaliseState(row.state);version=newVersion;render()}if(!silent)setStatus("Up to date","online")}catch(e){if(!silent)setStatus(e.message||"Refresh failed","error")}}
+async function pushState(){if(!sb)throw new Error("Not connected.");busy=true;try{const res=await sb.rpc("coffee_save_room",{p_room_name:roomName,p_passcode:roomPass,p_state:state,p_expected_version:version});if(res.error)throw res.error;const row=Array.isArray(res.data)?res.data[0]:res.data;if(!row)throw new Error("Save failed.");state=normaliseState(row.state);version=Number(row.version||0);setStatus("Saved · shared online","online");render()}catch(e){if((e.message||"").toLowerCase().includes("conflict")){await refreshNow(true);alert("Someone else updated the tracker at the same time. Latest data loaded — repeat your last action.")}else{setStatus(e.message||"Save failed","error");alert(e.message||"Save failed.")}}finally{busy=false}}
+function getSelectedAttendees(){return[...document.querySelectorAll(".attendee:checked")].map(x=>x.value)}
+function debtTable(extra=[]){const futureRounds=state.history.length+(extra.length?1:0),fa={};state.people.forEach(n=>fa[n]=(state.stats[n]?.attended||0)+(extra.includes(n)?1:0));const total=state.people.reduce((s,n)=>s+fa[n],0);return state.people.map(n=>{const st=state.stats[n]||{attended:0,bought:0,spent:0},expected=total?(fa[n]/total)*futureRounds:0,debt=expected-st.bought;return{name:n,...st,expected,debt,balance:st.bought-expected}})}function chooseBuyer(attendees){return debtTable(attendees).filter(r=>attendees.includes(r.name)).sort((a,b)=>b.debt-a.debt||a.bought-b.bought||a.name.localeCompare(b.name))[0].name}
+async function addPerson(){const name=$("newName").value.trim();if(!name||state.people.includes(name))return;state.people.push(name);state.stats[name]={attended:0,bought:0,spent:0};$("newName").value="";await pushState()}async function removePerson(name){if(!confirm(`Remove ${name}? Old history will remain.`))return;state.people=state.people.filter(p=>p!==name);delete state.stats[name];await pushState()}function selectAll(){document.querySelectorAll(".attendee").forEach(x=>x.checked=true)}function clearTicks(){document.querySelectorAll(".attendee").forEach(x=>x.checked=false);$("winnerBox").classList.add("hidden")}
+function previewBuyer(){const attendees=getSelectedAttendees();if(!attendees.length){alert("Tick who is in first.");return}const buyer=chooseBuyer(attendees),detail=debtTable(attendees).filter(r=>attendees.includes(r.name)).sort((a,b)=>b.debt-a.debt).map(r=>`${r.name} ${r.debt.toFixed(2)}`).join(" · ");$("winnerBox").textContent=`☕ ${buyer} should buy next · debt scores: ${detail}`;$("winnerBox").classList.remove("hidden")}
+async function recordRound(){const attendees=getSelectedAttendees();if(!attendees.length){alert("Tick who is in first.");return}const buyer=chooseBuyer(attendees),cost=Number($("roundCost").value||0);attendees.forEach(n=>{if(!state.stats[n])state.stats[n]={attended:0,bought:0,spent:0};state.stats[n].attended++});state.stats[buyer].bought++;state.stats[buyer].spent+=cost;state.history.push({id:(crypto.randomUUID?crypto.randomUUID():String(Date.now())),date:new Date().toLocaleDateString("en-GB"),time:new Date().toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"}),attendees,buyer,cost});$("winnerBox").textContent=`☕ ${buyer} is buying this round`;$("winnerBox").classList.remove("hidden");$("roundCost").value="";await pushState()}
+async function deleteRound(id){const h=state.history.find(x=>x.id===id);if(!h||!confirm("Delete this round and reverse its stats?"))return;h.attendees.forEach(n=>{if(state.stats[n])state.stats[n].attended=Math.max(0,state.stats[n].attended-1)});if(state.stats[h.buyer]){state.stats[h.buyer].bought=Math.max(0,state.stats[h.buyer].bought-1);state.stats[h.buyer].spent=Math.max(0,state.stats[h.buyer].spent-Number(h.cost||0))}state.history=state.history.filter(x=>x.id!==id);await pushState()}
+function exportBackup(){const blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="coffee-round-backup.json";a.click();URL.revokeObjectURL(a.href)}async function importBackup(ev){const f=ev.target.files[0];if(!f)return;const imported=JSON.parse(await f.text());if(!confirm("Replace the shared room with this backup?"))return;state=normaliseState(imported);await pushState()}async function resetAll(){if(!confirm("Reset the shared room back to Matt, Kris and Dan with no history?"))return;state=clone(DEFAULT_STATE);await pushState()}
+function render(){state=normaliseState(state);$("peopleList").innerHTML=state.people.map(n=>`<div class="person-row"><strong>${esc(n)}</strong><button class="danger" onclick="removePerson('${escAttr(n)}')">Remove</button></div>`).join("");$("attendanceList").innerHTML=state.people.map(n=>`<div class="tick-row"><label><input class="attendee" type="checkbox" value="${escAttr(n)}"> ${esc(n)}</label></div>`).join("");const rows=debtTable([]).sort((a,b)=>b.balance-a.balance);$("leaderboard").innerHTML=`<table><thead><tr><th>Name</th><th>Bought</th><th>Attended</th><th>Expected</th><th>Balance</th><th>Spent</th></tr></thead><tbody>${rows.map(r=>`<tr><td><strong>${esc(r.name)}</strong></td><td>${r.bought}</td><td>${r.attended}</td><td>${r.expected.toFixed(2)}</td><td class="${r.balance>=0?'pos':'neg'}">${r.balance>=0?'+':''}${r.balance.toFixed(2)}</td><td>£${r.spent.toFixed(2)}</td></tr>`).join("")}</tbody></table><p class="small">Balance = rounds bought minus attendance-adjusted expected rounds. Positive = bought more than fair share.</p>`;const hist=[...state.history].reverse();$("history").innerHTML=hist.length?`<table><thead><tr><th>Date</th><th>Who was in</th><th>Buyer</th><th>Cost</th><th></th></tr></thead><tbody>${hist.map(h=>`<tr><td>${esc(h.date)}<br><span class="small">${esc(h.time||"")}</span></td><td>${h.attendees.map(esc).join(", ")}</td><td><strong>${esc(h.buyer)}</strong></td><td>£${Number(h.cost||0).toFixed(2)}</td><td><button class="danger" onclick="deleteRound('${escAttr(h.id)}')">Delete</button></td></tr>`).join("")}</tbody></table>`:`<p class="small">No rounds recorded yet.</p>`}
+loadSavedConnection();render();
+</script>
 </body>
 </html>
