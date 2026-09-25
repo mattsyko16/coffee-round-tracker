@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Coffee Round Tracker</title>
+<style>
+:root{--bg:#f6f3ef;--card:#fff;--text:#241b16;--muted:#6f6259;--accent:#7b4b2a;--accent2:#e7d3bf;--danger:#b43232;--ok:#2f7d47;--border:#ddd0c3}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--text);padding:16px}
+.wrap{max-width:920px;margin:0 auto}
+h1{margin:8px 0 4px;font-size:2rem}
+h2{margin:0 0 12px;font-size:1.25rem}
+p{color:var(--muted);line-height:1.4}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:16px;margin-bottom:14px;box-shadow:0 8px 20px rgba(50,30,15,.05)}
+input,button,select{font:inherit;border-radius:12px;border:1px solid var(--border);padding:10px 12px}
+input,select{width:100%;background:#fffaf6;color:var(--text);margin:6px 0}
+button{background:var(--accent);color:#fff;border:none;cursor:pointer;font-weight:700;margin:4px 4px 4px 0}
+button.secondary{background:#5d6978}
+button.ghost{background:var(--accent2);color:var(--text)}
+button.danger{background:var(--danger)}
+.person-row,.tick-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px dashed var(--border)}
+.tick-row label{display:flex;align-items:center;gap:10px;width:100%;cursor:pointer}
+.tick-row input{width:auto;transform:scale(1.25)}
+.status{display:inline-block;padding:6px 10px;border-radius:999px;background:#dceedd;margin:6px 0 12px;font-size:.9rem;color:#1d5c2d}
+.winner{font-size:1.7rem;padding:14px;background:#fff5e9;border-radius:16px;border:1px solid var(--border);margin:10px 0}
+table{width:100%;border-collapse:collapse;font-size:.95rem}
+th,td{text-align:left;padding:9px 7px;border-bottom:1px solid var(--border);vertical-align:top}
+th{color:var(--muted);font-size:.85rem}
+.small{font-size:.85rem;color:var(--muted)}
+.hidden{display:none}
+#leaderboard,#history{overflow-x:auto}
+.balance-positive{color:var(--ok);font-weight:700}
+.balance-negative{color:var(--danger);font-weight:700}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>☕ Coffee Round Tracker</h1>
+<p>Single-user GitHub Pages version. Data saves on this device/browser only. Fairness is based on <strong>rounds bought vs rounds attended</strong>; cost is tracked separately.</p>
+<div class="status">Local storage active</div>
+
+<div class="grid">
+<section class="card">
+<h2>People</h2>
+<input id="newName" placeholder="Add person">
+<button onclick="addPerson()">Add Person</button>
+<div id="peopleList"></div>
+</section>
+
+<section class="card">
+<h2>Today's round</h2>
+<p class="small">Tick who is actually in today. The app chooses the fairest buyer.</p>
+<div id="attendanceList"></div>
+<button class="secondary" onclick="previewBuyer()">Preview Buyer / Who's Round?</button>
+<input id="roundCost" type="number" min="0" step="0.01" placeholder="Optional total cost, e.g. 9.60">
+<button onclick="recordRound()">Record Round</button>
+<button class="ghost" onclick="selectAll()">Everyone in</button>
+<button class="ghost" onclick="clearTicks()">Clear</button>
+<div id="winnerBox" role="status" aria-live="polite" class="winner hidden"></div>
+</section>
+</div>
+
+<section class="card">
+<h2>Manual Historic Round / Payment</h2>
+<p class="small">Add a past round once. The buyer is automatically included among the attendees. Leave cost blank for a free or unknown-cost round.</p>
+<label for="historicDate">Date</label><input id="historicDate" type="date">
+<label for="historicBuyer">Buyer</label><select id="historicBuyer" onchange="includeHistoricBuyer()"></select>
+<p class="small">Who attended?</p><div id="historicAttendanceList"></div>
+<label for="historicCost">Optional total cost (£)</label><input id="historicCost" type="number" min="0" step="0.01" placeholder="0.00">
+<button onclick="recordHistoricRound()">Save Historic Round</button>
+<p id="historicStatus" role="status" aria-live="polite" class="small"></p>
+</section>
+<section class="card">
+<h2>Leaderboard</h2>
+<div id="leaderboard"></div>
+</section>
+
+<section class="card">
+<h2>History</h2>
+<button class="secondary" onclick="exportBackup()">Export Backup</button>
+<button class="secondary" onclick="document.getElementById('importFile').click()">Import Backup</button>
+<input id="importFile" class="hidden" type="file" accept=".json" onchange="importBackup(event)">
+<button class="danger" onclick="resetAll()">Reset Everything</button>
+<div id="history"></div>
+</section>
+</div>
+
+<script>
+const STORAGE_KEY="coffeeRoundTrackerLocalV3";
+const DEFAULT_STATE={people:["Matt","Kris","Dan"],stats:{Matt:{attended:0,bought:0,spent:0},Kris:{attended:0,bought:0,spent:0},Dan:{attended:0,bought:0,spent:0}},history:[]};
+let state=loadState();
+function $(id){return document.getElementById(id)}
+function clone(obj){return JSON.parse(JSON.stringify(obj))}
+function loadState(){const saved=localStorage.getItem(STORAGE_KEY);if(!saved)return clone(DEFAULT_STATE);try{return normaliseState(JSON.parse(saved))}catch{return clone(DEFAULT_STATE)}}
+function normaliseState(s){
+ if(!s||!Array.isArray(s.people)||!s.stats||!Array.isArray(s.history))throw new Error("Invalid backup");
+ const next={people:[...new Set(s.people)],stats:Object.create(null),history:s.history};
+ if(next.people.some(p=>typeof p!=="string"||!p.trim()))throw new Error("Invalid person");
+ for(const p of next.people){const st=Object.hasOwn(s.stats,p)?s.stats[p]:{};next.stats[p]={};for(const k of ["attended","bought","spent"]){const n=Number(st[k]||0);if(!Number.isFinite(n)||n<0||(k!=="spent"&&!Number.isInteger(n)))throw new Error("Invalid stats");next.stats[p][k]=n}}
+ const ids=new Set();
+ for(const h of next.history){if(!h||typeof h.id!=="string"||ids.has(h.id)||typeof h.buyer!=="string"||typeof h.date!=="string"||!Array.isArray(h.attendees)||h.attendees.some(p=>typeof p!=="string")||new Set(h.attendees).size!==h.attendees.length||!Number.isFinite(Number(h.cost||0))||Number(h.cost||0)<0)throw new Error("Invalid history");ids.add(h.id)}
+ return next;
+}
+function saveState(){localStorage.setItem(STORAGE_KEY,JSON.stringify(state));render()}
+function addPerson(){const name=$("newName").value.trim();if(!name)return;if(!state.people.includes(name)){state.people.push(name);Object.defineProperty(state.stats,name,{value:{attended:0,bought:0,spent:0},writable:true,enumerable:true,configurable:true});$("newName").value="";saveState()}}
+function removePerson(name){if(!confirm(`Remove ${name}? Their old history rows will remain, but future rounds will not include them.`))return;state.people=state.people.filter(p=>p!==name);delete state.stats[name];saveState()}
+function selectAll(){$("winnerBox").classList.add("hidden");document.querySelectorAll(".attendee").forEach(cb=>cb.checked=true)}
+function clearTicks(){$("winnerBox").classList.add("hidden");document.querySelectorAll(".attendee").forEach(cb=>cb.checked=false)}
+function chooseBuyer(attendees){return attendees.map(name=>{const st=state.stats[name]||{attended:0,bought:0,spent:0};const ratio=st.attended?st.bought/st.attended:0;return{name,ratio,bought:st.bought,attended:st.attended}}).sort((a,b)=>a.ratio-b.ratio||a.bought-b.bought||a.name.localeCompare(b.name))[0].name}
+function todayValue(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`}
+function selectedAttendees(){return [...document.querySelectorAll(".attendee:checked")].map(x=>x.value)}
+function showWinner(message){$("winnerBox").textContent=message;$("winnerBox").classList.remove("hidden")}
+function previewBuyer(){const attendees=selectedAttendees();if(!attendees.length){alert("Tick who is in today first.");return}showWinner(`☕ ${chooseBuyer(attendees)} is buying this round — preview only; nothing saved.`)}
+function readCost(id){const raw=$(id).value.trim();const cost=Number(raw||0);if(!Number.isFinite(cost)||cost<0||!$(id).checkValidity()){alert("Enter a valid cost of zero or more, with at most two decimal places.");return null}return cost}
+function commitRound(attendees,buyer,cost,date,time){
+ const next=clone(state);
+ attendees.forEach(name=>{next.stats[name].attended+=1});
+ next.stats[buyer].bought+=1;next.stats[buyer].spent+=cost;
+ const id=globalThis.crypto?.randomUUID?crypto.randomUUID():`${Date.now()}-${Math.random().toString(36).slice(2)}`;
+ next.history.push({id,date,time,attendees:[...attendees],buyer,cost});
+ try{localStorage.setItem(STORAGE_KEY,JSON.stringify(next))}catch{alert("Could not save this round. Your data has not changed. Export a backup and check browser storage.");return false}
+ state=next;render();return true;
+}
+function recordRound(){const attendees=selectedAttendees();if(!attendees.length){alert("Tick who is in today first.");return}const buyer=chooseBuyer(attendees);const cost=readCost("roundCost");if(cost===null)return;const now=new Date();if(commitRound(attendees,buyer,cost,now.toLocaleDateString("en-GB"),now.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"}))){showWinner(`☕ ${buyer} is buying this round — recorded.`);$("roundCost").value=""}}
+function includeHistoricBuyer(){const buyer=$("historicBuyer").value;document.querySelectorAll(".historic-attendee").forEach(cb=>{cb.disabled=cb.value===buyer;if(cb.disabled)cb.checked=true})}
+function recordHistoricRound(){
+ const date=$("historicDate").value,buyer=$("historicBuyer").value;
+ if(!date||!$("historicDate").checkValidity()){alert("Choose the date of the historic round.");return}
+ if(!state.people.includes(buyer)){alert("Choose a buyer first.");return}
+ const cost=readCost("historicCost");if(cost===null)return;
+ const attendees=[...new Set([...document.querySelectorAll(".historic-attendee:checked")].map(x=>x.value).concat(buyer))];
+ const [year,month,day]=date.split("-");
+ if(commitRound(attendees,buyer,cost,`${day}/${month}/${year}`,"")){
+  $("historicDate").value="";$("historicBuyer").value="";$("historicCost").value="";
+  document.querySelectorAll(".historic-attendee").forEach(cb=>{cb.checked=false;cb.disabled=false});
+  $("historicStatus").textContent=`Saved historic round: ${buyer}, ${day}/${month}/${year}.`;
+ }
+}
+function deleteRound(id){const entry=state.history.find(h=>h.id===id);if(!entry||!confirm("Delete this round and reverse the stats?"))return;entry.attendees.forEach(name=>{if(state.stats[name])state.stats[name].attended=Math.max(0,state.stats[name].attended-1)});if(state.stats[entry.buyer]){state.stats[entry.buyer].bought=Math.max(0,state.stats[entry.buyer].bought-1);state.stats[entry.buyer].spent=Math.max(0,state.stats[entry.buyer].spent-Number(entry.cost||0))}state.history=state.history.filter(h=>h.id!==id);saveState()}
+function exportBackup(){const blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="coffee-round-backup.json";a.click();URL.revokeObjectURL(a.href)}
+async function importBackup(event){const file=event.target.files[0];if(!file)return;try{const imported=normaliseState(JSON.parse(await file.text()));if(!confirm("Import backup and replace current data on this device?"))return;localStorage.setItem(STORAGE_KEY,JSON.stringify(imported));state=imported;render()}catch{alert("Could not import backup. Use a valid Coffee Round Tracker JSON backup and check browser storage.")}finally{event.target.value=""}}
+function resetAll(){if(!confirm("Reset all people, stats and history back to Matt, Kris and Dan?"))return;state=clone(DEFAULT_STATE);saveState()}
+function render(){$("winnerBox").classList.add("hidden");$("historicStatus").textContent="";state=normaliseState(state);$("peopleList").innerHTML=state.people.map((name,index)=>`<div class="person-row"><strong>${escapeHtml(name)}</strong><button class="danger" onclick="removePerson(state.people[${index}])">Remove</button></div>`).join("");$("attendanceList").innerHTML=state.people.map(name=>`<div class="tick-row"><label><input class="attendee" onchange="$('winnerBox').classList.add('hidden')" type="checkbox" value="${escapeHtml(name)}"> ${escapeHtml(name)}</label></div>`).join("");$("historicBuyer").innerHTML='<option value="">Choose buyer</option>'+state.people.map(name=>`<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`).join("");
+$("historicAttendanceList").innerHTML=state.people.map(name=>`<div class="tick-row"><label><input class="historic-attendee" type="checkbox" value="${escapeHtml(name)}"> ${escapeHtml(name)}</label></div>`).join("");
+const totalAttendances=state.people.reduce((sum,p)=>sum+(state.stats[p]?.attended||0),0);const totalRounds=state.history.length||0;const leaderboardRows=state.people.map(name=>{const st=state.stats[name];const expected=totalAttendances?(st.attended/totalAttendances)*totalRounds:0;const balance=st.bought-expected;return{name,...st,expected,balance}}).sort((a,b)=>b.balance-a.balance);$("leaderboard").innerHTML=`<table><thead><tr><th>Name</th><th>Rounds bought</th><th>Attendances</th><th>Fair balance</th><th>Total spend</th></tr></thead><tbody>${leaderboardRows.map(r=>`<tr><td><strong>${escapeHtml(r.name)}</strong></td><td>${r.bought}</td><td>${r.attended}</td><td class="${r.balance>=0?'balance-positive':'balance-negative'}">${r.balance>=0?'+':''}${r.balance.toFixed(2)}</td><td>£${r.spent.toFixed(2)}</td></tr>`).join("")}</tbody></table><p class="small">Fair balance is rounds bought minus expected rounds bought based on attendance. Positive means they have bought more than their fair share.</p>`;const hist=[...state.history].reverse();$("history").innerHTML=hist.length?`<table><thead><tr><th>Date</th><th>Who was in</th><th>Buyer</th><th>Cost</th><th></th></tr></thead><tbody>${hist.map(h=>`<tr><td>${escapeHtml(h.date)}<br><span class="small">${escapeHtml(h.time||"")}</span></td><td>${h.attendees.map(escapeHtml).join(", ")}</td><td><strong>${escapeHtml(h.buyer)}</strong></td><td>£${Number(h.cost||0).toFixed(2)}</td><td><button class="danger" onclick="deleteRound(state.history[${state.history.indexOf(h)}].id)">Delete</button></td></tr>`).join("")}</tbody></table>`:`<p class="small">No rounds recorded yet.</p>`}
+function escapeHtml(str){return String(str).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]))}
+
+render();
+</script>
+</body>
+</html>
