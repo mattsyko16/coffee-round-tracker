@@ -1,114 +1,153 @@
-<!doctype html>
-<html lang="en"><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#10151b"><title>DACC Fuel Engineer</title>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Coffee Round Tracker</title>
 <style>
-:root{--bg:#10151b;--card:#1a222c;--line:#354250;--text:#f7fafc;--muted:#c1cfda;--green:#52df92;--amber:#ffcd66;--red:#ff7973;--blue:#78baff}
-*{box-sizing:border-box}html{background:var(--bg)}body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,sans-serif;padding:env(safe-area-inset-top) 14px env(safe-area-inset-bottom)}
-.wrap{max-width:650px;margin:auto;padding:14px 0 36px}header{display:flex;justify-content:space-between;align-items:center;margin:0 2px 12px}h1{font-size:1.2rem;letter-spacing:.06em;margin:0}h1 span{color:var(--red)}.tag{color:var(--muted);font-size:.77rem;font-weight:700}
-.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:12px}h2{font-size:1.2rem;margin:0 0 5px}p{margin:3px 0 12px;color:var(--muted);font-size:.88rem;line-height:1.45}label{display:block;color:var(--muted);font-weight:750;font-size:.87rem;margin:0 0 7px}input{width:100%;height:56px;background:#0e151d;border:2px solid var(--line);border-radius:12px;color:var(--text);font:inherit;font-size:1.3rem;font-weight:800;padding:7px 11px}input:focus{outline:3px solid #78baff66;border-color:var(--blue)}button{font:inherit;cursor:pointer;touch-action:manipulation}button:focus-visible,summary:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
-.seg{display:grid;grid-template-columns:1fr 1fr;gap:8px}.seg button{min-height:54px;border-radius:12px;background:#101821;border:2px solid var(--line);color:var(--text);font-weight:900}.seg button.active{background:#a82525;border-color:#ff7973}
-.hero{background:linear-gradient(140deg,#164a35,#152b29);border:2px solid #359262;border-radius:16px;padding:14px;margin:12px 0}.hero .label{font-size:.85rem;font-weight:900;letter-spacing:.04em}.hero .value{font-size:clamp(3.3rem,13vw,5.5rem);font-weight:950;line-height:1.06;letter-spacing:-.045em;font-variant-numeric:tabular-nums}.unit{font-size:.35em;letter-spacing:0}.hero .detail{font-size:.9rem;color:#e3f7ea}
-.subresult{display:flex;justify-content:space-between;align-items:center;gap:10px;border:1px solid var(--line);padding:12px;border-radius:12px;font-weight:800}.subresult strong{font-size:1.8rem;color:var(--green);white-space:nowrap;font-variant-numeric:tabular-nums}
-.clock{display:grid;grid-template-columns:1fr 1fr;gap:10px}.clock .field{min-width:0}.stepper{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:12px 0}.stepper button{min-height:70px;border-radius:14px;border:2px solid #687786;background:#273847;color:white;font-size:1.27rem;font-weight:900;white-space:nowrap}.stepper button:active{background:#477397}.row{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:end}.row>*{min-width:0}.muted{font-size:.82rem;color:var(--muted);line-height:1.4}.resetHalf,.copy{min-height:52px;width:100%;background:#29394b;color:#fff;border:2px solid #6c859b;border-radius:12px;font-weight:800;margin:10px 0 0}.copy{background:#a82525;border-color:#ff7973}.notice{border-radius:12px;padding:11px 12px;margin-top:10px;font-size:.88rem;line-height:1.4;background:#253343;color:#eaf2f9}.notice.bad{background:#522222;color:#ffe7e4;border:1px solid var(--red)}.notice.warn{background:#46361d;color:#ffe8ae;border:1px solid var(--amber)}
-details{border:1px solid var(--line);border-radius:16px;background:var(--card);padding:0 16px;margin-bottom:12px}summary{cursor:pointer;font-weight:900;min-height:58px;display:flex;align-items:center;list-style:none}summary::-webkit-details-marker{display:none}summary:after{content:'⌄';margin-left:auto;font-size:1.3rem}.settings{padding:0 0 16px}.settings .row{margin-bottom:13px}.settings label{font-size:.8rem}.settings input{font-size:1.08rem;height:52px}.planner{border-color:#45617e}.plannerResult{font-size:2.3rem;font-weight:950;color:var(--blue);font-variant-numeric:tabular-nums;margin:8px 0}.footer{font-size:.75rem;color:var(--muted);text-align:center;padding:8px}.hidden{display:none!important}
-.wakeBtn{width:100%;min-height:64px;border:2px solid #6c859b;border-radius:14px;background:#29394b;color:#fff;font-size:1.13rem;font-weight:900}.wakeBtn.on{background:#165b39;border-color:var(--green)}.wakeStatus{min-height:1.5em;margin:9px 0 0;font-size:.86rem;color:var(--muted)}
-@media(max-width:370px){.stepper{gap:5px}.stepper button{font-size:1.02rem;min-height:66px;padding:0}.hero .value{font-size:3.1rem}}@media(min-width:620px){.clock{max-width:370px}}
-</style></head><body><main class="wrap">
-<header><h1>DACC <span>FUEL</span> ENGINEER</h1><span class="tag">V5 · DRIVER TOOL</span></header>
-<section class="card" aria-label="Calculation mode"><div class="seg"><button id="modeTime" type="button" aria-pressed="true">⏱ TIME</button><button id="modeLaps" type="button" aria-pressed="false">🏁 LAPS</button></div></section>
-<section class="card" aria-label="Screen awake"><button id="wakeToggle" class="wakeBtn" type="button" aria-pressed="false">☀ Keep screen awake: OFF</button><div id="wakeStatus" class="wakeStatus" role="status">Tap before your stint to keep this screen visible.</div></section>
+:root{--bg:#f6f3ef;--card:#fff;--text:#241b16;--muted:#6f6259;--accent:#7b4b2a;--accent2:#e7d3bf;--danger:#b43232;--ok:#2f7d47;--border:#ddd0c3}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--text);padding:16px}
+.wrap{max-width:920px;margin:0 auto}
+h1{margin:8px 0 4px;font-size:2rem}
+h2{margin:0 0 12px;font-size:1.25rem}
+p{color:var(--muted);line-height:1.4}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:16px;margin-bottom:14px;box-shadow:0 8px 20px rgba(50,30,15,.05)}
+input,button,select{font:inherit;border-radius:12px;border:1px solid var(--border);padding:10px 12px}
+input,select{width:100%;background:#fffaf6;color:var(--text);margin:6px 0}
+button{background:var(--accent);color:#fff;border:none;cursor:pointer;font-weight:700;margin:4px 4px 4px 0}
+button.secondary{background:#5d6978}
+button.ghost{background:var(--accent2);color:var(--text)}
+button.danger{background:var(--danger)}
+.person-row,.tick-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px dashed var(--border)}
+.tick-row label{display:flex;align-items:center;gap:10px;width:100%;cursor:pointer}
+.tick-row input{width:auto;transform:scale(1.25)}
+.status{display:inline-block;padding:6px 10px;border-radius:999px;background:#dceedd;margin:6px 0 12px;font-size:.9rem;color:#1d5c2d}
+.winner{font-size:1.7rem;padding:14px;background:#fff5e9;border-radius:16px;border:1px solid var(--border);margin:10px 0}
+table{width:100%;border-collapse:collapse;font-size:.95rem}
+th,td{text-align:left;padding:9px 7px;border-bottom:1px solid var(--border);vertical-align:top}
+th{color:var(--muted);font-size:.85rem}
+.small{font-size:.85rem;color:var(--muted)}
+.hidden{display:none}
+#leaderboard,#history{overflow-x:auto}
+.balance-positive{color:var(--ok);font-weight:700}
+.balance-negative{color:var(--danger);font-weight:700}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>☕ Coffee Round Tracker</h1>
+<p>Single-user GitHub Pages version. Data saves on this device/browser only. Fairness is based on <strong>rounds bought vs rounds attended</strong>; cost is tracked separately.</p>
+<div class="status">Local storage active</div>
+
+<div class="grid">
 <section class="card">
-<h2>Fuel to the finish</h2><p>Enter the race clock <strong>as you enter the pits</strong>.</p><div class="hero" aria-live="polite"><div class="label">FUEL TO LEAVE PITS WITH</div><div class="value"><span id="target">—</span><span class="unit"> L</span></div><div class="detail" id="pitDetail">Set the values below</div></div>
-<div id="pitTimeFields"><div class="clock"><div class="field"><label for="pitHours">Hours left (optional)</label><input id="pitHours" type="number" inputmode="numeric" min="0" step="1"></div><div class="field"><label for="pitMinutes">Minutes left</label><input id="pitMinutes" type="number" inputmode="decimal" min="0" max="59.9" step="0.1"></div></div>
-<div class="stepper" aria-label="Adjust time remaining"><button type="button" data-time="-3" aria-label="Subtract three minutes">−3 min</button><button type="button" data-time="-1" aria-label="Subtract one minute">−1 min</button><button type="button" data-time="1" aria-label="Add one minute">+1 min</button><button type="button" data-time="3" aria-label="Add three minutes">+3 min</button></div>
-<div class="row"><div><label for="stopSeconds">Stop / pit loss (seconds)</label><input id="stopSeconds" type="number" inputmode="decimal" min="0" step="1"></div><div><label for="currentFuel">Fuel on board (L)</label><input id="currentFuel" type="number" inputmode="decimal" min="0" step="0.1"></div></div><div class="muted">Stop time runs from pit entry to rejoining. Fuel on board is the amount at pit entry.</div></div>
-<div id="pitLapFields" class="hidden"><label for="pitLaps">Laps left at pit entry</label><input id="pitLaps" type="number" inputmode="numeric" min="0" step="1"><div class="stepper" aria-label="Adjust laps remaining"><button type="button" data-laps="-3">−3 laps</button><button type="button" data-laps="-1">−1 lap</button><button type="button" data-laps="1">+1 lap</button><button type="button" data-laps="3">+3 laps</button></div></div>
-
-
-<div class="subresult"><span>Fuel to add at pit stop</span><strong><span id="add">—</span> L</strong></div><button id="resetHalf" class="resetHalf" type="button">Set to half of planned duration</button><div id="pitNotice" class="notice" role="status"></div><button class="copy" id="copy" type="button">Copy fuel call</button>
+<h2>People</h2>
+<input id="newName" placeholder="Add person">
+<button onclick="addPerson()">Add Person</button>
+<div id="peopleList"></div>
 </section>
-<section class="card planner"><h2>Plan before you drive</h2><p>Calculate fuel for your whole race or your own stint.</p>
-<div id="planTimeFields" class="clock"><div class="field"><label for="planHours">Planned hours (optional)</label><input id="planHours" type="number" inputmode="numeric" min="0" step="1"></div><div class="field"><label for="planMinutes">Planned minutes</label><input id="planMinutes" type="number" inputmode="decimal" min="0" max="59.9" step="0.1"></div></div>
-<div id="planLapFields" class="hidden"><label for="planLaps">Planned laps</label><input id="planLaps" type="number" inputmode="numeric" min="0" step="1"></div>
-<div class="muted" id="halfHint">The pit clock starts at half of this duration. Once adjusted, it stays where you set it.</div>
-<div class="plannerResult"><span id="planFuel">—</span> L</div><div id="planDetail" class="muted"></div><div id="planNotice" class="notice" role="status"></div></section>
-<details><summary>Fuel and lap settings</summary><div class="settings">
-<div class="row"><div><label for="fuelPerLap">Fuel per lap (L)</label><input id="fuelPerLap" type="number" inputmode="decimal" min="0.01" step="0.01"></div><div><label for="marginLaps">Safety margin (laps)</label><input id="marginLaps" type="number" inputmode="decimal" min="0" step="0.5"></div></div>
-<div class="row"><div><label for="lapMin">Average lap: minutes</label><input id="lapMin" type="number" inputmode="numeric" min="0" step="1"></div><div><label for="lapSec">Average lap: seconds</label><input id="lapSec" type="number" inputmode="decimal" min="0" max="59.999" step="0.1"></div></div>
-<div class="row"><div><label for="tank">Tank capacity (L)</label><input id="tank" type="number" inputmode="decimal" min="0.1" step="1"></div></div>
-<p>Target includes the safety laps. “Fuel to add” uses the fuel still on board at pit entry. Time mode rounds expected laps up to a whole lap.</p><button id="resetAll" class="resetHalf" type="button">Reset all values</button></div></details>
-<div class="footer">Runs offline in your browser · Values saved on this device · Check the race clock and consumption before using a fuel call</div></main>
+
+<section class="card">
+<h2>Today's round</h2>
+<p class="small">Tick who is actually in today. The app chooses the fairest buyer.</p>
+<div id="attendanceList"></div>
+<button class="secondary" onclick="previewBuyer()">Preview Buyer / Who's Round?</button>
+<input id="roundCost" type="number" min="0" step="0.01" placeholder="Optional total cost, e.g. 9.60">
+<button onclick="recordRound()">Record Round</button>
+<button class="ghost" onclick="selectAll()">Everyone in</button>
+<button class="ghost" onclick="clearTicks()">Clear</button>
+<div id="winnerBox" role="status" aria-live="polite" class="winner hidden"></div>
+</section>
+</div>
+
+<section class="card">
+<h2>Manual Historic Round / Payment</h2>
+<p class="small">Add a past round once. The buyer is automatically included among the attendees. Leave cost blank for a free or unknown-cost round.</p>
+<label for="historicDate">Date</label><input id="historicDate" type="date">
+<label for="historicBuyer">Buyer</label><select id="historicBuyer" onchange="includeHistoricBuyer()"></select>
+<p class="small">Who attended?</p><div id="historicAttendanceList"></div>
+<label for="historicCost">Optional total cost (£)</label><input id="historicCost" type="number" min="0" step="0.01" placeholder="0.00">
+<button onclick="recordHistoricRound()">Save Historic Round</button>
+<p id="historicStatus" role="status" aria-live="polite" class="small"></p>
+</section>
+<section class="card">
+<h2>Leaderboard</h2>
+<div id="leaderboard"></div>
+</section>
+
+<section class="card">
+<h2>History</h2>
+<button class="secondary" onclick="exportBackup()">Export Backup</button>
+<button class="secondary" onclick="document.getElementById('importFile').click()">Import Backup</button>
+<input id="importFile" class="hidden" type="file" accept=".json" onchange="importBackup(event)">
+<button class="danger" onclick="resetAll()">Reset Everything</button>
+<div id="history"></div>
+</section>
+</div>
+
 <script>
-const DEFAULTS={version:2,mode:'time',planHours:2,planMinutes:0,planLaps:80,pitHours:1,pitMinutes:0,pitLaps:40,stopSeconds:0,lapMin:1,lapSec:30,fuelPerLap:2.24,marginLaps:2,currentFuel:0,tank:120,autoHalf:true};
-let state={...DEFAULTS};const $=id=>document.getElementById(id);const keys=Object.keys(DEFAULTS).filter(k=>!['mode','version','autoHalf'].includes(k));
-const ceilL=n=>Math.ceil(n-1e-9),fmt=n=>Number.isFinite(n)?n.toFixed(1):'—',fmtFuel=n=>Number.isFinite(n)?String(n):'—';
-function time(h,m){return Number(h)*60+Number(m)}
-function setClock(prefix,total){const t=Math.max(0,total);$(prefix+'Hours').value=Math.floor(t/60);$(prefix+'Minutes').value=Number((t%60).toFixed(3))}
-function half(){if(state.mode==='laps')$('pitLaps').value=Math.ceil(Number($('planLaps').value)/2);else setClock('pit',time($('planHours').value,$('planMinutes').value)/2);state.autoHalf=true;calculate()}
-function save(){try{localStorage.setItem('daccFuelCalc',JSON.stringify(state))}catch{}}
-function init(){try{const old=JSON.parse(localStorage.getItem('daccFuelCalc')||'null');if(old&&typeof old==='object'){
-if(old.version===2)state={...DEFAULTS,...old};else{state={...DEFAULTS,mode:old.mode==='laps'?'laps':'time'};for(const k of ['lapMin','lapSec','fuelPerLap','marginLaps','currentFuel','tank'])if(Number.isFinite(Number(old[k])))state[k]=Number(old[k]);
-if(Number.isFinite(Number(old.pitLoss)))state.stopSeconds=Number(old.pitLoss);if(Number.isFinite(Number(old.laps))){state.pitLaps=Number(old.laps);state.planLaps=2*Number(old.laps)}}}
-}catch{}for(const k of keys)$(k).value=state[k];setMode(state.mode,false)}
-function setMode(mode,update=true){state.mode=mode==='laps'?'laps':'time';for(const [id,on] of [['modeTime',state.mode==='time'],['modeLaps',state.mode==='laps']]){$(id).classList.toggle('active',on);$(id).setAttribute('aria-pressed',String(on))}for(const id of ['pitTimeFields','planTimeFields'])$(id).classList.toggle('hidden',state.mode!=='time');for(const id of ['pitLapFields','planLapFields'])$(id).classList.toggle('hidden',state.mode!=='laps');if(update&&state.autoHalf)half();else calculate()}
-function readNumber(id,minimum=0){const v=$(id).value.trim();if(v===''||!Number.isFinite(Number(v))||Number(v)<minimum)return NaN;return Number(v)}
-function readTime(prefix){const rawHours=$(prefix+'Hours').value.trim(),rawMinutes=$(prefix+'Minutes').value.trim();if(rawHours===''&&rawMinutes==='')return NaN;const h=rawHours===''?0:readNumber(prefix+'Hours'),m=rawMinutes===''?0:readNumber(prefix+'Minutes');return m>=60?NaN:time(h,m)}
-function notice(id,message,level=''){const e=$(id);e.textContent=message;e.className='notice'+(level?' '+level:'')}
-function calculate(){for(const k of keys)state[k]=$(k).value;const fpl=readNumber('fuelPerLap',0.00001),margin=readNumber('marginLaps'),tank=readNumber('tank',0.00001),current=readNumber('currentFuel'),lapSeconds=readNumber('lapMin')*60+readNumber('lapSec');const stop=readNumber('stopSeconds');const isTime=state.mode==='time';const pitInput=isTime?readTime('pit'):readNumber('pitLaps');const planInput=isTime?readTime('plan'):readNumber('planLaps');
-const validBase=Number.isFinite(fpl)&&Number.isFinite(margin)&&Number.isFinite(tank)&&Number.isFinite(current)&&current<=tank&&(!isTime||Number.isFinite(lapSeconds)&&lapSeconds>0&&Number.isFinite(stop));
-const pitValid=validBase&&Number.isFinite(pitInput);const planValid=validBase&&Number.isFinite(planInput);
-if(pitValid){const usable=isTime?Math.max(0,pitInput*60-stop):pitInput;const laps=isTime?Math.ceil((usable-1e-9)/lapSeconds):Math.ceil(pitInput);const target=ceilL((laps+margin)*fpl);const add=ceilL(Math.max(0,target-current));$('target').textContent=fmtFuel(target);$('add').textContent=fmtFuel(add);$('pitDetail').textContent=isTime?laps+' estimated laps · '+fmt(usable/60)+' min after stop · +'+margin+' safety laps':laps+' laps remaining · +'+margin+' safety laps';
-if(target>tank+1e-9)notice('pitNotice','Target exceeds the '+fmt(tank)+' L tank by '+fmtFuel(ceilL(target-tank))+' L. Another stop or fuel saving is required.','bad');else if(isTime&&stop>=pitInput*60&&pitInput>0)notice('pitNotice','The entered stop time uses all remaining race time. Check the clock and stop time.','warn');else notice('pitNotice','Leave with '+fmtFuel(target)+' L total. With '+fmt(current)+' L on board, add '+fmtFuel(add)+' L.');
-}else{$('target').textContent='—';$('add').textContent='—';$('pitDetail').textContent='Check the inputs';notice('pitNotice','Enter valid values for time/laps, fuel, lap time, current fuel and tank.','bad')}
-if(planValid){const laps=isTime?Math.ceil((planInput*60-1e-9)/lapSeconds):Math.ceil(planInput);const fuel=ceilL((laps+margin)*fpl);$('planFuel').textContent=fmtFuel(fuel);$('planDetail').textContent=laps+' estimated laps × '+fpl.toFixed(2)+' L/lap + '+margin+' safety laps';notice('planNotice',fuel>tank+1e-9?'More than one tank ('+fmt(tank)+' L). Plan refuelling stops.':'Fits in one '+fmt(tank)+' L tank.',fuel>tank+1e-9?'warn':'')
-}else{$('planFuel').textContent='—';$('planDetail').textContent='';notice('planNotice','Check planned duration and fuel settings.','bad')}save()}
-function adjustTime(delta){const v=readTime('pit');setClock('pit',Math.max(0,(Number.isFinite(v)?v:0)+delta));state.autoHalf=false;calculate()}
-function adjustLaps(delta){const v=readNumber('pitLaps');$('pitLaps').value=Math.max(0,Math.ceil(Number.isFinite(v)?v:0)+delta);state.autoHalf=false;calculate()}
-async function copyCall(){if($('target').textContent==='—')return;const call='DACC FUEL TO FINISH: '+$('target').textContent+' L total at pit exit; ADD '+$('add').textContent+' L with '+$('currentFuel').value+' L on board. '+$('pitDetail').textContent+'.';try{await navigator.clipboard.writeText(call);$('copy').textContent='Copied ✓';setTimeout(()=>$('copy').textContent='Copy fuel call',1300)}catch{window.prompt('Copy fuel call:',call)}}
-let wakeWanted=false,wakeSentinel=null,wakePending=false;
-function wakeMessage(message){$('wakeStatus').textContent=message}
-function wakeButton(){
-  const on=!!wakeSentinel&&!wakeSentinel.released;
-  $('wakeToggle').classList.toggle('on',on);
-  $('wakeToggle').setAttribute('aria-pressed',String(on));
-  $('wakeToggle').textContent=on?'☀ Keep screen awake: ON':wakePending?'☀ Turning screen awake on…':'☀ Keep screen awake: OFF';
+const STORAGE_KEY="coffeeRoundTrackerLocalV3";
+const DEFAULT_STATE={people:["Matt","Kris","Dan"],stats:{Matt:{attended:0,bought:0,spent:0},Kris:{attended:0,bought:0,spent:0},Dan:{attended:0,bought:0,spent:0}},history:[]};
+let state=loadState();
+function $(id){return document.getElementById(id)}
+function clone(obj){return JSON.parse(JSON.stringify(obj))}
+function loadState(){const saved=localStorage.getItem(STORAGE_KEY);if(!saved)return clone(DEFAULT_STATE);try{return normaliseState(JSON.parse(saved))}catch{return clone(DEFAULT_STATE)}}
+function normaliseState(s){
+ if(!s||!Array.isArray(s.people)||!s.stats||!Array.isArray(s.history))throw new Error("Invalid backup");
+ const next={people:[...new Set(s.people)],stats:Object.create(null),history:s.history};
+ if(next.people.some(p=>typeof p!=="string"||!p.trim()))throw new Error("Invalid person");
+ for(const p of next.people){const st=Object.hasOwn(s.stats,p)?s.stats[p]:{};next.stats[p]={};for(const k of ["attended","bought","spent"]){const n=Number(st[k]||0);if(!Number.isFinite(n)||n<0||(k!=="spent"&&!Number.isInteger(n)))throw new Error("Invalid stats");next.stats[p][k]=n}}
+ const ids=new Set();
+ for(const h of next.history){if(!h||typeof h.id!=="string"||ids.has(h.id)||typeof h.buyer!=="string"||typeof h.date!=="string"||!Array.isArray(h.attendees)||h.attendees.some(p=>typeof p!=="string")||new Set(h.attendees).size!==h.attendees.length||!Number.isFinite(Number(h.cost||0))||Number(h.cost||0)<0)throw new Error("Invalid history");ids.add(h.id)}
+ return next;
 }
-async function acquireWake(){
-  if(!wakeWanted||wakeSentinel||wakePending)return;
-  if(!navigator.wakeLock||typeof navigator.wakeLock.request!=='function'||window.isSecureContext===false){
-    wakeWanted=false;wakeMessage('Unavailable here. Use the HTTPS GitHub Pages link, or change iPhone Settings → Display & Brightness → Auto-Lock.');wakeButton();return;
-  }
-  if(document.visibilityState==='hidden'){wakeMessage('Paused while this page is hidden.');return}
-  wakePending=true;wakeButton();wakeMessage('Requesting screen awake…');
-  try{
-    const lock=await navigator.wakeLock.request('screen');
-    wakePending=false;
-    if(!wakeWanted){await lock.release();wakeButton();return}
-    wakeSentinel=lock;
-    lock.addEventListener('release',()=>{
-      if(wakeSentinel!==lock)return;
-      wakeSentinel=null;
-      if(wakeWanted&&document.visibilityState==='hidden')wakeMessage('Paused; will resume when you return.');
-      else{wakeWanted=false;wakeMessage('Screen awake was interrupted. Tap to try again.')}
-      wakeButton();
-    });
-    wakeMessage('Active while this app stays visible. Tap again to switch off.');wakeButton();
-  }catch(e){
-    wakePending=false;
-    if(document.visibilityState==='hidden'&&wakeWanted)wakeMessage('Paused; will resume when you return.');
-    else{wakeWanted=false;wakeMessage('Could not keep the screen awake here. Try Safari / your HTTPS Pages link, or adjust iPhone Auto-Lock.')}
-    wakeButton();
-  }
+function saveState(){localStorage.setItem(STORAGE_KEY,JSON.stringify(state));render()}
+function addPerson(){const name=$("newName").value.trim();if(!name)return;if(!state.people.includes(name)){state.people.push(name);Object.defineProperty(state.stats,name,{value:{attended:0,bought:0,spent:0},writable:true,enumerable:true,configurable:true});$("newName").value="";saveState()}}
+function removePerson(name){if(!confirm(`Remove ${name}? Their old history rows will remain, but future rounds will not include them.`))return;state.people=state.people.filter(p=>p!==name);delete state.stats[name];saveState()}
+function selectAll(){$("winnerBox").classList.add("hidden");document.querySelectorAll(".attendee").forEach(cb=>cb.checked=true)}
+function clearTicks(){$("winnerBox").classList.add("hidden");document.querySelectorAll(".attendee").forEach(cb=>cb.checked=false)}
+function chooseBuyer(attendees){return attendees.map(name=>{const st=state.stats[name]||{attended:0,bought:0,spent:0};const ratio=st.attended?st.bought/st.attended:0;return{name,ratio,bought:st.bought,attended:st.attended}}).sort((a,b)=>a.ratio-b.ratio||a.bought-b.bought||a.name.localeCompare(b.name))[0].name}
+function todayValue(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`}
+function selectedAttendees(){return [...document.querySelectorAll(".attendee:checked")].map(x=>x.value)}
+function showWinner(message){$("winnerBox").textContent=message;$("winnerBox").classList.remove("hidden")}
+function previewBuyer(){const attendees=selectedAttendees();if(!attendees.length){alert("Tick who is in today first.");return}showWinner(`☕ ${chooseBuyer(attendees)} is buying this round — preview only; nothing saved.`)}
+function readCost(id){const raw=$(id).value.trim();const cost=Number(raw||0);if(!Number.isFinite(cost)||cost<0||!$(id).checkValidity()){alert("Enter a valid cost of zero or more, with at most two decimal places.");return null}return cost}
+function commitRound(attendees,buyer,cost,date,time){
+ const next=clone(state);
+ attendees.forEach(name=>{next.stats[name].attended+=1});
+ next.stats[buyer].bought+=1;next.stats[buyer].spent+=cost;
+ const id=globalThis.crypto?.randomUUID?crypto.randomUUID():`${Date.now()}-${Math.random().toString(36).slice(2)}`;
+ next.history.push({id,date,time,attendees:[...attendees],buyer,cost});
+ try{localStorage.setItem(STORAGE_KEY,JSON.stringify(next))}catch{alert("Could not save this round. Your data has not changed. Export a backup and check browser storage.");return false}
+ state=next;render();return true;
 }
-async function toggleWake(){
-  if(wakeWanted){
-    wakeWanted=false;const lock=wakeSentinel;wakeSentinel=null;wakeButton();wakeMessage('Off. Tap before your stint to keep the screen visible.');
-    if(lock)try{await lock.release()}catch{}
-  }else{wakeWanted=true;await acquireWake()}
+function recordRound(){const attendees=selectedAttendees();if(!attendees.length){alert("Tick who is in today first.");return}const buyer=chooseBuyer(attendees);const cost=readCost("roundCost");if(cost===null)return;const now=new Date();if(commitRound(attendees,buyer,cost,now.toLocaleDateString("en-GB"),now.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"}))){showWinner(`☕ ${buyer} is buying this round — recorded.`);$("roundCost").value=""}}
+function includeHistoricBuyer(){const buyer=$("historicBuyer").value;document.querySelectorAll(".historic-attendee").forEach(cb=>{cb.disabled=cb.value===buyer;if(cb.disabled)cb.checked=true})}
+function recordHistoricRound(){
+ const date=$("historicDate").value,buyer=$("historicBuyer").value;
+ if(!date||!$("historicDate").checkValidity()){alert("Choose the date of the historic round.");return}
+ if(!state.people.includes(buyer)){alert("Choose a buyer first.");return}
+ const cost=readCost("historicCost");if(cost===null)return;
+ const attendees=[...new Set([...document.querySelectorAll(".historic-attendee:checked")].map(x=>x.value).concat(buyer))];
+ const [year,month,day]=date.split("-");
+ if(commitRound(attendees,buyer,cost,`${day}/${month}/${year}`,"")){
+  $("historicDate").value="";$("historicBuyer").value="";$("historicCost").value="";
+  document.querySelectorAll(".historic-attendee").forEach(cb=>{cb.checked=false;cb.disabled=false});
+  $("historicStatus").textContent=`Saved historic round: ${buyer}, ${day}/${month}/${year}.`;
+ }
 }
-$('wakeToggle').addEventListener('click',toggleWake);
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&wakeWanted)acquireWake();else if(document.visibilityState==='hidden'&&wakeWanted)wakeMessage('Paused; will resume when you return.')});
-if(!navigator.wakeLock||typeof navigator.wakeLock.request!=='function'||window.isSecureContext===false)wakeMessage('Screen awake is unavailable in this preview. Try the HTTPS GitHub Pages link.');
-document.querySelectorAll('input').forEach(e=>e.addEventListener('input',()=>{if(['pitHours','pitMinutes','pitLaps'].includes(e.id))state.autoHalf=false;if(['planHours','planMinutes','planLaps'].includes(e.id)&&state.autoHalf){half();return}calculate()}));
-document.querySelectorAll('[data-time]').forEach(e=>e.addEventListener('click',()=>adjustTime(Number(e.dataset.time))));document.querySelectorAll('[data-laps]').forEach(e=>e.addEventListener('click',()=>adjustLaps(Number(e.dataset.laps))));$('modeTime').onclick=()=>setMode('time');$('modeLaps').onclick=()=>setMode('laps');$('resetHalf').onclick=half;$('copy').onclick=copyCall;$('resetAll').onclick=()=>{state={...DEFAULTS};for(const k of keys)$(k).value=state[k];setMode('time')};init();
-</script></body></html>
+function deleteRound(id){const entry=state.history.find(h=>h.id===id);if(!entry||!confirm("Delete this round and reverse the stats?"))return;entry.attendees.forEach(name=>{if(state.stats[name])state.stats[name].attended=Math.max(0,state.stats[name].attended-1)});if(state.stats[entry.buyer]){state.stats[entry.buyer].bought=Math.max(0,state.stats[entry.buyer].bought-1);state.stats[entry.buyer].spent=Math.max(0,state.stats[entry.buyer].spent-Number(entry.cost||0))}state.history=state.history.filter(h=>h.id!==id);saveState()}
+function exportBackup(){const blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="coffee-round-backup.json";a.click();URL.revokeObjectURL(a.href)}
+async function importBackup(event){const file=event.target.files[0];if(!file)return;try{const imported=normaliseState(JSON.parse(await file.text()));if(!confirm("Import backup and replace current data on this device?"))return;localStorage.setItem(STORAGE_KEY,JSON.stringify(imported));state=imported;render()}catch{alert("Could not import backup. Use a valid Coffee Round Tracker JSON backup and check browser storage.")}finally{event.target.value=""}}
+function resetAll(){if(!confirm("Reset all people, stats and history back to Matt, Kris and Dan?"))return;state=clone(DEFAULT_STATE);saveState()}
+function render(){$("winnerBox").classList.add("hidden");$("historicStatus").textContent="";state=normaliseState(state);$("peopleList").innerHTML=state.people.map((name,index)=>`<div class="person-row"><strong>${escapeHtml(name)}</strong><button class="danger" onclick="removePerson(state.people[${index}])">Remove</button></div>`).join("");$("attendanceList").innerHTML=state.people.map(name=>`<div class="tick-row"><label><input class="attendee" onchange="$('winnerBox').classList.add('hidden')" type="checkbox" value="${escapeHtml(name)}"> ${escapeHtml(name)}</label></div>`).join("");$("historicBuyer").innerHTML='<option value="">Choose buyer</option>'+state.people.map(name=>`<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`).join("");
+$("historicAttendanceList").innerHTML=state.people.map(name=>`<div class="tick-row"><label><input class="historic-attendee" type="checkbox" value="${escapeHtml(name)}"> ${escapeHtml(name)}</label></div>`).join("");
+const totalAttendances=state.people.reduce((sum,p)=>sum+(state.stats[p]?.attended||0),0);const totalRounds=state.history.length||0;const leaderboardRows=state.people.map(name=>{const st=state.stats[name];const expected=totalAttendances?(st.attended/totalAttendances)*totalRounds:0;const balance=st.bought-expected;return{name,...st,expected,balance}}).sort((a,b)=>b.balance-a.balance);$("leaderboard").innerHTML=`<table><thead><tr><th>Name</th><th>Rounds bought</th><th>Attendances</th><th>Fair balance</th><th>Total spend</th></tr></thead><tbody>${leaderboardRows.map(r=>`<tr><td><strong>${escapeHtml(r.name)}</strong></td><td>${r.bought}</td><td>${r.attended}</td><td class="${r.balance>=0?'balance-positive':'balance-negative'}">${r.balance>=0?'+':''}${r.balance.toFixed(2)}</td><td>£${r.spent.toFixed(2)}</td></tr>`).join("")}</tbody></table><p class="small">Fair balance is rounds bought minus expected rounds bought based on attendance. Positive means they have bought more than their fair share.</p>`;const hist=[...state.history].reverse();$("history").innerHTML=hist.length?`<table><thead><tr><th>Date</th><th>Who was in</th><th>Buyer</th><th>Cost</th><th></th></tr></thead><tbody>${hist.map(h=>`<tr><td>${escapeHtml(h.date)}<br><span class="small">${escapeHtml(h.time||"")}</span></td><td>${h.attendees.map(escapeHtml).join(", ")}</td><td><strong>${escapeHtml(h.buyer)}</strong></td><td>£${Number(h.cost||0).toFixed(2)}</td><td><button class="danger" onclick="deleteRound(state.history[${state.history.indexOf(h)}].id)">Delete</button></td></tr>`).join("")}</tbody></table>`:`<p class="small">No rounds recorded yet.</p>`}
+function escapeHtml(str){return String(str).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]))}
+
+render();
+</script>
+</body>
+</html>
