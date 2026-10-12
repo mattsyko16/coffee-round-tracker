@@ -2,6 +2,6 @@
 // Never put the shared access code, a secret key, or a service-role key here.
 window.COFFEE_CONFIG = {
   supabaseUrl: "",
-  supabasePublishableKey: ""
+  supabasePublishableKey: "sb_publishable_S4fgWUdHyHROfj_XrJaw9A_3JwXFTOn"
 };
 
