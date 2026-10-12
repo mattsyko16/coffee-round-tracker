@@ -1,29 +1,31 @@
 -- Run in a NEW Supabase project. Do not run against the song app or the old coffee app.
 -- All browser writes go through authenticated RPCs. Table data is never directly writable.
+-- Safe to rerun after an interrupted paste; a complete run is one transaction.
+begin;
 create extension if not exists pgcrypto;
 
-create table public.coffee_settings (
+create table if not exists public.coffee_settings (
   id boolean primary key default true check (id),
   code_hash text check (code_hash is null or code_hash ~ '^[0-9a-f]{64}$')
 );
-insert into public.coffee_settings(id, code_hash) values (true, null);
+insert into public.coffee_settings(id, code_hash) values (true, null) on conflict (id) do nothing;
 
-create table public.coffee_members (
+create table if not exists public.coffee_members (
   user_id uuid primary key references auth.users(id) on delete cascade,
   display_name text not null check (length(btrim(display_name)) between 1 and 80),
   is_admin boolean not null default false,
   joined_at timestamptz not null default now()
 );
 
-create table public.coffee_people (
+create table if not exists public.coffee_people (
   id uuid primary key default gen_random_uuid(),
   name text not null check (length(btrim(name)) between 1 and 80),
   active boolean not null default true,
   created_at timestamptz not null default now()
 );
-create unique index coffee_people_name_unique on public.coffee_people(lower(btrim(name)));
+create unique index if not exists coffee_people_name_unique on public.coffee_people(lower(btrim(name)));
 
-create table public.coffee_rounds (
+create table if not exists public.coffee_rounds (
   id uuid primary key default gen_random_uuid(),
   request_id uuid not null unique,
   round_date date not null,
@@ -37,14 +39,14 @@ create table public.coffee_rounds (
   check (cardinality(attendee_ids) between 1 and 50),
   check (buyer_id = any(attendee_ids))
 );
-create index coffee_rounds_date_idx on public.coffee_rounds(round_date desc, created_at desc);
+create index if not exists coffee_rounds_date_idx on public.coffee_rounds(round_date desc, created_at desc);
 
-create table public.coffee_revision (
+create table if not exists public.coffee_revision (
   id boolean primary key default true check (id),
   version bigint not null default 0,
   changed_at timestamptz not null default now()
 );
-insert into public.coffee_revision(id) values (true);
+insert into public.coffee_revision(id) values (true) on conflict (id) do nothing;
 
 alter table public.coffee_settings enable row level security;
 alter table public.coffee_members enable row level security;
@@ -55,8 +57,10 @@ revoke all on public.coffee_settings, public.coffee_members, public.coffee_peopl
   public.coffee_rounds, public.coffee_revision from public, anon, authenticated;
 grant select on public.coffee_revision to authenticated;
 grant select on public.coffee_members to authenticated;
+drop policy if exists coffee_member_self_read on public.coffee_members;
 create policy coffee_member_self_read on public.coffee_members
   for select to authenticated using (user_id = (select auth.uid()));
+drop policy if exists coffee_revision_member_read on public.coffee_revision;
 create policy coffee_revision_member_read on public.coffee_revision
   for select to authenticated using (
     exists (select 1 from public.coffee_members m where m.user_id = (select auth.uid()))
@@ -64,7 +68,7 @@ create policy coffee_revision_member_read on public.coffee_revision
 
 create schema if not exists private;
 
-create function private.coffee_member_required(p_admin boolean default false)
+create or replace function private.coffee_member_required(p_admin boolean default false)
 returns void language plpgsql security definer set search_path = '' as $$
 begin
   if auth.uid() is null or not exists (
@@ -76,7 +80,7 @@ begin
 end;
 $$;
 
-create function private.coffee_validate_attendees(p_ids uuid[])
+create or replace function private.coffee_validate_attendees(p_ids uuid[])
 returns void language plpgsql security definer set search_path = '' as $$
 begin
   if p_ids is null or cardinality(p_ids) not between 1 and 50
@@ -90,7 +94,7 @@ end;
 $$;
 
 -- Allocates any odd pennies by UUID order so every round's shares add up exactly.
-create function private.coffee_balances()
+create or replace function private.coffee_balances()
 returns table(person_id uuid, spent_pence bigint, share_pence bigint,
               bought bigint, attended bigint, balance_pence bigint)
 language sql security definer set search_path = '' as $$
@@ -116,7 +120,7 @@ language sql security definer set search_path = '' as $$
   left join purchases b on b.buyer_id = p.id;
 $$;
 
-create function private.coffee_pick_buyer(p_ids uuid[])
+create or replace function private.coffee_pick_buyer(p_ids uuid[])
 returns uuid language sql security definer set search_path = '' as $$
   select b.person_id from private.coffee_balances() b
   join public.coffee_people p on p.id = b.person_id
@@ -125,7 +129,7 @@ returns uuid language sql security definer set search_path = '' as $$
   limit 1;
 $$;
 
-create function public.coffee_join(p_code text, p_name text)
+create or replace function public.coffee_join(p_code text, p_name text)
 returns boolean language plpgsql security definer set search_path = '' as $$
 declare v_hash text; v_admin boolean;
 begin
@@ -145,7 +149,7 @@ begin
 end;
 $$;
 
-create function public.coffee_snapshot()
+create or replace function public.coffee_snapshot()
 returns jsonb language plpgsql security definer set search_path = '' as $$
 declare v_result jsonb;
 begin
@@ -164,7 +168,7 @@ begin
 end;
 $$;
 
-create function public.coffee_preview(p_attendee_ids uuid[])
+create or replace function public.coffee_preview(p_attendee_ids uuid[])
 returns uuid language plpgsql security definer set search_path = '' as $$
 begin
   perform private.coffee_member_required();
@@ -173,7 +177,7 @@ begin
 end;
 $$;
 
-create function public.coffee_add_person(p_name text)
+create or replace function public.coffee_add_person(p_name text)
 returns uuid language plpgsql security definer set search_path = '' as $$
 declare v_id uuid;
 begin
@@ -188,7 +192,7 @@ begin
 end;
 $$;
 
-create function public.coffee_archive_person(p_person_id uuid)
+create or replace function public.coffee_archive_person(p_person_id uuid)
 returns void language plpgsql security definer set search_path = '' as $$
 begin
   perform private.coffee_member_required();
@@ -202,7 +206,7 @@ begin
 end;
 $$;
 
-create function public.coffee_record_round(
+create or replace function public.coffee_record_round(
   p_request_id uuid, p_attendee_ids uuid[], p_cost_pence integer,
   p_round_date date default current_date, p_historic_buyer_id uuid default null
 ) returns jsonb language plpgsql security definer set search_path = '' as $$
@@ -246,7 +250,7 @@ begin
 end;
 $$;
 
-create function public.coffee_delete_round(p_round_id uuid)
+create or replace function public.coffee_delete_round(p_round_id uuid)
 returns void language plpgsql security definer set search_path = '' as $$
 begin
   perform private.coffee_member_required();
@@ -258,7 +262,7 @@ end;
 $$;
 
 -- One transaction. Admin only, and only into an empty board. Existing phone data is untouched.
-create function public.coffee_import_legacy(p_people jsonb, p_rounds jsonb)
+create or replace function public.coffee_import_legacy(p_people jsonb, p_rounds jsonb)
 returns jsonb language plpgsql security definer set search_path = '' as $$
 declare v_person jsonb; v_round jsonb; v_name text; v_id uuid;
         v_map jsonb := '{}'::jsonb; v_ids uuid[]; v_buyer uuid;
@@ -330,5 +334,15 @@ grant execute on function public.coffee_join(text,text), public.coffee_snapshot(
   public.coffee_import_legacy(jsonb,jsonb) to authenticated;
 
 -- Only the revision marker is exposed to Realtime; its RLS policy gates events.
-alter publication supabase_realtime add table public.coffee_revision;
+do $$
+begin
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'coffee_revision'
+  ) then
+    alter publication supabase_realtime add table public.coffee_revision;
+  end if;
+end;
+$$;
+commit;
 
