@@ -340,7 +340,7 @@ begin
     select 1 from pg_publication_tables
     where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'coffee_revision'
   ) then
-    alter publication supabase_realtime add table public.coffee_revision;
+    execute 'alter publication supabase_realtime add table public.coffee_revision';
   end if;
 end;
 $$;
