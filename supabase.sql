@@ -219,10 +219,11 @@ begin
   perform 1 from public.coffee_revision where id = true for update;
   select * into v_round from public.coffee_rounds where request_id = p_request_id;
   if found then
-    if v_round.attendee_ids is distinct from p_attendee_ids or v_round.cost_pence is distinct from p_cost_pence
-       or v_round.round_date is distinct from p_round_date
-       or v_round.kind is distinct from case when p_historic_buyer_id is null then 'round' else 'historic' end
-       or (p_historic_buyer_id is not null and v_round.buyer_id is distinct from p_historic_buyer_id) then
+    if v_round.attendee_ids <> p_attendee_ids or v_round.cost_pence <> p_cost_pence
+       or v_round.round_date <> p_round_date
+       or (p_historic_buyer_id is null and v_round.kind <> 'round')
+       or (p_historic_buyer_id is not null and
+           (v_round.kind <> 'historic' or v_round.buyer_id <> p_historic_buyer_id)) then
       raise exception 'Request ID reused with different data' using errcode = '22023';
     end if;
     return jsonb_build_object('id',v_round.id,'buyer_id',v_round.buyer_id,'duplicate',true);
