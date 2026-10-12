@@ -1,118 +1,79 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Coffee Round Tracker</title>
-<style>
-:root{--bg:#f6f3ef;--card:#fff;--text:#241b16;--muted:#6f6259;--accent:#7b4b2a;--accent2:#e7d3bf;--danger:#b43232;--ok:#2f7d47;--border:#ddd0c3}
-*{box-sizing:border-box}
-body{margin:0;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--text);padding:16px}
-.wrap{max-width:920px;margin:0 auto}
-h1{margin:8px 0 4px;font-size:2rem}
-h2{margin:0 0 12px;font-size:1.25rem}
-p{color:var(--muted);line-height:1.4}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
-.card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:16px;margin-bottom:14px;box-shadow:0 8px 20px rgba(50,30,15,.05)}
-input,select,button{font:inherit;border-radius:12px;border:1px solid var(--border);padding:10px 12px}
-input,select{width:100%;background:#fffaf6;color:var(--text);margin:6px 0}
-button{background:var(--accent);color:#fff;border:none;cursor:pointer;font-weight:700;margin:4px 4px 4px 0}
-button.secondary{background:#5d6978}
-button.ghost{background:var(--accent2);color:var(--text)}
-button.danger{background:var(--danger)}
-.person-row,.tick-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px dashed var(--border)}
-.tick-row label{display:flex;align-items:center;gap:10px;width:100%;cursor:pointer}
-.tick-row input{width:auto;transform:scale(1.25)}
-.status{display:inline-block;padding:6px 10px;border-radius:999px;background:#dceedd;margin:6px 0 12px;font-size:.9rem;color:#1d5c2d}
-.winner{font-size:1.7rem;padding:14px;background:#fff5e9;border-radius:16px;border:1px solid var(--border);margin:10px 0}
-table{width:100%;border-collapse:collapse;font-size:.95rem}
-th,td{text-align:left;padding:9px 7px;border-bottom:1px solid var(--border);vertical-align:top}
-th{color:var(--muted);font-size:.85rem}
-.small{font-size:.85rem;color:var(--muted)}
-.hidden{display:none}
-.balance-positive{color:var(--ok);font-weight:700}
-.balance-negative{color:var(--danger);font-weight:700}
-</style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#402c25">
+  <title>Coffee Round Tracker · Live</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="config.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script type="module" src="app.js"></script>
 </head>
 <body>
-<div class="wrap">
-<h1>☕ Coffee Round Tracker</h1>
-<p>Single-user GitHub Pages version. Data saves on this device/browser only. Fairness is based on <strong>money paid vs each person's share of rounds attended</strong>.</p>
-<div class="status">Local storage active</div>
+  <main class="shell">
+    <header class="masthead">
+      <div class="brand"><span class="brand-mark" aria-hidden="true">☕</span><div><span class="eyebrow">THE COFFEE CLUB</span><h1>Round Tracker</h1></div></div>
+      <span id="connection" class="connection">Connecting…</span>
+    </header>
 
-<div class="grid">
-<section class="card">
-<h2>People</h2>
-<input id="newName" placeholder="Add person">
-<button onclick="addPerson()">Add Person</button>
-<div id="peopleList"></div>
-</section>
+    <section id="setup-view" class="panel narrow" hidden>
+      <h2>Set up this board</h2><p>The owner needs to add a new Supabase project URL and publishable key to <code>config.js</code>. Members only need the link and access code.</p>
+    </section>
 
-<section class="card">
-<h2>Today's round</h2>
-<p class="small">Tick who is actually in today. The app chooses the fairest buyer.</p>
-<div id="attendanceList"></div>
-<input id="roundCost" type="number" min="0" step="0.01" placeholder="Optional total cost, e.g. 9.60">
-<button class="ghost" onclick="previewBuyer()">Who's Round?</button>
-<button onclick="recordRound()">Record Round</button>
-<button class="ghost" onclick="selectAll()">Everyone in</button>
-<button class="ghost" onclick="clearTicks()">Clear</button>
-<div id="winnerBox" class="winner hidden"></div>
-</section>
-</div>
+    <section id="join-view" class="panel narrow" hidden>
+      <span class="eyebrow">SHARED COFFEE BOARD</span>
+      <h2>Join the round</h2>
+      <p>Enter your name and the access code from your group organiser. You only need to do this once per browser.</p>
+      <form id="join-form">
+        <label>Your name<input id="join-name" maxlength="80" autocomplete="name" required placeholder="e.g. Matt"></label>
+        <label>Access code<input id="join-code" type="password" minlength="16" maxlength="128" autocomplete="off" required placeholder="Private group code"></label>
+        <button type="submit">Join board</button>
+      </form>
+      <p id="join-message" class="message" role="status"></p>
+    </section>
 
-
-<section class="card">
-<h2>Add Historic Round / Payment</h2>
-<p class="small">Add an older payment. Choose the buyer, date, everyone who was there, and the total cost.</p>
-<input id="historicDate" type="date">
-<select id="historicBuyer"></select>
-<div id="historicAttendance"></div>
-<input id="historicCost" type="number" min="0" step="0.01" placeholder="Optional total cost (£)">
-<button onclick="saveHistoricRound()">Save Historic Round</button>
-</section>
-
-<section class="card">
-<h2>Leaderboard</h2>
-<div id="leaderboard"></div>
-</section>
-
-<section class="card">
-<h2>History</h2>
-<button class="secondary" onclick="exportBackup()">Export Backup</button>
-<button class="secondary" onclick="document.getElementById('importFile').click()">Import Backup</button>
-<input id="importFile" class="hidden" type="file" accept=".json" onchange="importBackup(event)">
-<button class="danger" onclick="resetAll()">Reset Everything</button>
-<div id="history"></div>
-</section>
-</div>
-
-<script>
-const STORAGE_KEY="coffeeRoundTrackerLocalV3";
-const DEFAULT_STATE={people:["Matt","Kris","Dan"],stats:{Matt:{attended:0,bought:0,spent:0},Kris:{attended:0,bought:0,spent:0},Dan:{attended:0,bought:0,spent:0}},history:[]};
-let state=loadState();
-function $(id){return document.getElementById(id)}
-function clone(obj){return JSON.parse(JSON.stringify(obj))}
-function loadState(){const saved=localStorage.getItem(STORAGE_KEY);if(!saved)return clone(DEFAULT_STATE);try{return normaliseState(JSON.parse(saved))}catch{return clone(DEFAULT_STATE)}}
-function normaliseState(s){const next=s||clone(DEFAULT_STATE);next.people=Array.isArray(next.people)&&next.people.length?next.people:["Matt","Kris","Dan"];next.stats=next.stats||{};next.people.forEach(p=>{if(!next.stats[p])next.stats[p]={attended:0,bought:0,spent:0};next.stats[p].attended=Number(next.stats[p].attended||0);next.stats[p].bought=Number(next.stats[p].bought||0);next.stats[p].spent=Number(next.stats[p].spent||0)});next.history=Array.isArray(next.history)?next.history:[];return next}
-function saveState(){localStorage.setItem(STORAGE_KEY,JSON.stringify(state));render()}
-function addPerson(){const name=$("newName").value.trim();if(!name)return;if(!state.people.includes(name)){state.people.push(name);state.stats[name]={attended:0,bought:0,spent:0};$("newName").value="";saveState()}}
-function removePerson(name){if(!confirm(`Remove ${name}? Their old history rows will remain, but future rounds will not include them.`))return;state.people=state.people.filter(p=>p!==name);delete state.stats[name];saveState()}
-function selectAll(){document.querySelectorAll(".attendee").forEach(cb=>cb.checked=true)}
-function clearTicks(){document.querySelectorAll(".attendee").forEach(cb=>cb.checked=false)}
-function fairRows(){const shares={};state.people.forEach(n=>shares[n]=0);state.history.forEach(h=>{const a=Array.isArray(h.attendees)?h.attendees:[],cost=Number(h.cost||0);if(!a.length||!cost)return;const each=cost/a.length;a.forEach(n=>{if(Object.prototype.hasOwnProperty.call(shares,n))shares[n]+=each})});return state.people.map(name=>{const st=state.stats[name]||{attended:0,bought:0,spent:0},fairShare=shares[name]||0,balance=Number(st.spent||0)-fairShare;return{name,...st,fairShare,balance}})}
-function chooseBuyer(attendees){return fairRows().filter(r=>attendees.includes(r.name)).sort((a,b)=>a.balance-b.balance||a.spent-b.spent||a.bought-b.bought||a.name.localeCompare(b.name))[0].name}
-function previewBuyer(){const attendees=[...document.querySelectorAll(".attendee:checked")].map(x=>x.value);if(!attendees.length){alert("Tick who is in today first.");return}const buyer=chooseBuyer(attendees);const detail=fairRows().filter(r=>attendees.includes(r.name)).sort((a,b)=>a.balance-b.balance).map(r=>`${r.name} ${r.balance>=0?"+":""}£${r.balance.toFixed(2)}`).join(" · ");$("winnerBox").textContent=`☕ ${buyer} should buy next · ${detail}`;$("winnerBox").classList.remove("hidden")}
-function recordRound(){const attendees=[...document.querySelectorAll(".attendee:checked")].map(x=>x.value);if(!attendees.length){alert("Tick who is in today first.");return}const buyer=chooseBuyer(attendees);const cost=Number($("roundCost").value||0);attendees.forEach(name=>{if(!state.stats[name])state.stats[name]={attended:0,bought:0,spent:0};state.stats[name].attended+=1});state.stats[buyer].bought+=1;state.stats[buyer].spent+=cost;const entry={id:(crypto.randomUUID?crypto.randomUUID():String(Date.now())),date:new Date().toLocaleDateString("en-GB"),time:new Date().toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"}),attendees,buyer,cost};state.history.push(entry);$("winnerBox").textContent=`☕ ${buyer} is buying this round`;$("winnerBox").classList.remove("hidden");$("roundCost").value="";saveState()}
-function saveHistoricRound(){const buyer=$("historicBuyer").value,date=$("historicDate").value,cost=Number($("historicCost").value||0);let attendees=[...document.querySelectorAll(".historicAttendee:checked")].map(x=>x.value);if(!buyer)return alert("Choose the historic buyer.");if(!date)return alert("Choose the historic date.");if(!attendees.includes(buyer))attendees.push(buyer);attendees.forEach(name=>{if(!state.stats[name])state.stats[name]={attended:0,bought:0,spent:0};state.stats[name].attended+=1});state.stats[buyer].bought+=1;state.stats[buyer].spent+=cost;const [y,m,d]=date.split("-");state.history.push({id:(crypto.randomUUID?crypto.randomUUID():String(Date.now())),date:`${d}/${m}/${y}`,time:"Historic",attendees,buyer,cost,type:"historic"});$("historicCost").value="";saveState()}
-function deleteRound(id){const entry=state.history.find(h=>h.id===id);if(!entry||!confirm("Delete this round and reverse the stats?"))return;entry.attendees.forEach(name=>{if(state.stats[name])state.stats[name].attended=Math.max(0,state.stats[name].attended-1)});if(state.stats[entry.buyer]){state.stats[entry.buyer].bought=Math.max(0,state.stats[entry.buyer].bought-1);state.stats[entry.buyer].spent=Math.max(0,state.stats[entry.buyer].spent-Number(entry.cost||0))}state.history=state.history.filter(h=>h.id!==id);saveState()}
-function exportBackup(){const blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="coffee-round-backup.json";a.click();URL.revokeObjectURL(a.href)}
-async function importBackup(event){const file=event.target.files[0];if(!file)return;const text=await file.text();const imported=JSON.parse(text);if(!confirm("Import backup and replace current data on this device?"))return;state=normaliseState(imported);saveState()}
-function resetAll(){if(!confirm("Reset all people, stats and history back to Matt, Kris and Dan?"))return;state=clone(DEFAULT_STATE);saveState()}
-function render(){state=normaliseState(state);$("peopleList").innerHTML=state.people.map(name=>`<div class="person-row"><strong>${escapeHtml(name)}</strong><button class="danger" onclick="removePerson('${escapeAttr(name)}')">Remove</button></div>`).join("");$("attendanceList").innerHTML=state.people.map(name=>`<div class="tick-row"><label><input class="attendee" type="checkbox" value="${escapeAttr(name)}"> ${escapeHtml(name)}</label></div>`).join("");if($("historicBuyer")){$("historicBuyer").innerHTML='<option value="">Historic buyer…</option>'+state.people.map(name=>`<option value="${escapeAttr(name)}">${escapeHtml(name)}</option>`).join("");$("historicAttendance").innerHTML='<p class="small">Who was there?</p>'+state.people.map(name=>`<div class="tick-row"><label><input class="historicAttendee" type="checkbox" value="${escapeAttr(name)}"> ${escapeHtml(name)}</label></div>`).join("");if(!$("historicDate").value)$("historicDate").value=new Date().toISOString().slice(0,10)}const leaderboardRows=fairRows().sort((a,b)=>b.balance-a.balance);$("leaderboard").innerHTML=`<table><thead><tr><th>Name</th><th>Rounds bought</th><th>Attendances</th><th>Fair balance</th><th>Total spend</th></tr></thead><tbody>${leaderboardRows.map(r=>`<tr><td><strong>${escapeHtml(r.name)}</strong></td><td>${r.bought}</td><td>${r.attended}</td><td class="${r.balance>=0?'balance-positive':'balance-negative'}">${r.balance>=0?'+':''}£${r.balance.toFixed(2)}</td><td>£${Number(r.spent).toFixed(2)}</td></tr>`).join("")}</tbody></table><p class="small">Fair balance = amount paid minus your share of the cost of rounds you attended. Positive means paid more than your fair share; negative means behind.</p>`;const hist=[...state.history].reverse();$("history").innerHTML=hist.length?`<table><thead><tr><th>Date</th><th>Who was in</th><th>Buyer</th><th>Cost</th><th></th></tr></thead><tbody>${hist.map(h=>`<tr><td>${escapeHtml(h.date)}<br><span class="small">${escapeHtml(h.time||"")}</span></td><td>${(h.attendees||[]).map(escapeHtml).join(", ")}</td><td><strong>${escapeHtml(h.buyer)}</strong></td><td>£${Number(h.cost||0).toFixed(2)}</td><td><button class="danger" onclick="deleteRound('${escapeAttr(h.id)}')">Delete</button></td></tr>`).join("")}</tbody></table>`:`<p class="small">No rounds recorded yet.</p>`}
-function escapeHtml(str){return String(str).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]))}
-function escapeAttr(str){return String(str).replace(/\\/g,"\\\\").replace(/'/g,"\\'")}
-render();
-</script>
+    <div id="board-view" hidden>
+      <div class="intro"><div><span class="eyebrow">LIVE GROUP BOARD</span><h2>Keep the rounds fair.</h2><p>Each round’s real cost is shared between the people who were there.</p></div><button id="refresh" class="button-light" type="button">Refresh</button></div>
+      <p id="board-message" class="message" role="status"></p>
+      <div class="columns">
+        <div>
+          <section class="panel" aria-labelledby="today-title">
+            <div class="section-head"><span class="step">01</span><div><h3 id="today-title">Today’s round</h3><p>Tick who’s in, then see whose turn it is.</p></div></div>
+            <div id="today-attendees" class="chips"></div>
+            <div class="actions"><button id="select-all" class="button-light" type="button">Everyone in</button><button id="clear-all" class="button-light" type="button">Clear</button></div>
+            <button id="preview" class="button-outline" type="button">Who’s round?</button>
+            <div id="preview-box" class="preview" hidden></div>
+            <form id="round-form"><label>Total cost (£)<input id="round-cost" type="text" inputmode="decimal" placeholder="e.g. 9.60" required></label><button id="record-button" type="submit">Record round</button></form>
+          </section>
+          <section class="panel" aria-labelledby="historic-title">
+            <div class="section-head"><span class="step">02</span><div><h3 id="historic-title">Add an older round</h3><p>For payments made before you started using the live board.</p></div></div>
+            <form id="historic-form">
+              <div class="form-row"><label>Date<input id="historic-date" type="date" required></label><label>Buyer<select id="historic-buyer" required></select></label></div>
+              <span class="field-label">Who was there?</span><div id="historic-attendees" class="chips"></div>
+              <label>Total cost (£)<input id="historic-cost" type="text" inputmode="decimal" placeholder="e.g. 12.40" required></label>
+              <button id="historic-button" type="submit">Save historic round</button>
+            </form>
+          </section>
+          <section class="panel" aria-labelledby="people-title">
+            <div class="section-head"><span class="step">03</span><div><h3 id="people-title">People</h3><p>Anyone in the group can add a person.</p></div></div>
+            <form id="person-form" class="inline-form"><label class="sr-only" for="person-name">New person</label><input id="person-name" maxlength="80" placeholder="Name" required><button type="submit">Add</button></form>
+            <div id="people-list"></div>
+          </section>
+        </div>
+        <div>
+          <section class="panel" aria-labelledby="leaderboard-title"><div class="section-head"><span class="step">04</span><div><h3 id="leaderboard-title">Leaderboard</h3><p>Positive means paid ahead. Negative means behind.</p></div></div><div id="leaderboard"></div></section>
+          <section class="panel" aria-labelledby="history-title"><div class="section-head"><span class="step">05</span><div><h3 id="history-title">History</h3><p>Every entry can be checked or removed.</p></div></div><div id="history"></div></section>
+          <section class="panel" aria-labelledby="backup-title"><div class="section-head"><span class="step">06</span><div><h3 id="backup-title">Backups & migration</h3><p>Keep a copy of the board’s data.</p></div></div>
+            <div class="stack-actions"><button id="export" class="button-light" type="button">Download live backup</button><button id="import-local" class="button-light" type="button">Find old data on this device</button><button id="import-file-button" class="button-light" type="button">Import backup file</button><input id="import-file" type="file" accept=".json,application/json" hidden></div>
+            <div id="migration-preview" class="migration-preview" hidden></div>
+            <p class="small">Import is available to the first member who joins and only while this board is empty. It never removes the old data on your phone.</p>
+          </section>
+        </div>
+      </div>
+      <footer>Shared with your group · <span id="version-label"></span></footer>
+    </div>
+  </main>
 </body>
 </html>
+
