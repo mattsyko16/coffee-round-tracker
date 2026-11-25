@@ -7,7 +7,8 @@ This is a **new app for a new Supabase project**. The currently deployed coffee 
 ## What it does
 
 - Records a buyer, date, actual cost, and exact attendees for each round.
-- Calculates each attendee's share of each round in integer pennies. Odd pennies go to attendee IDs in a fixed order, so the round's shares always add to its cost.
+- New rounds can split equally or assign Tea, Americano, or Latte and an editable price to each attendee. Drink prices must add up to the total paid. Older rounds continue their original equal split.
+- Calculates each attendee's share in integer pennies. For equal splits, odd pennies go to attendee IDs in a fixed order, so the round's shares always add to its cost.
 - Shows fair balance as **paid minus share**. Positive is ahead; negative is behind.
 - Previews the most-behind present person before saving. The database chooses again inside a locked transaction at save time, so simultaneous phones cannot both rely on a stale preview. The saved buyer is shown afterward.
 - Adds historic rounds, archives people without erasing their history, shows leaderboard and history, deletes erroneous rounds, and downloads a live JSON backup.
@@ -17,7 +18,7 @@ This is a **new app for a new Supabase project**. The currently deployed coffee 
 ## Owner setup
 
 1. Create a **new** Supabase project. In **Authentication → Providers**, enable **Anonymous Sign-Ins**. Do not reuse the Empty Threats project or any currently deployed coffee database.
-2. In its SQL Editor, run `supabase.sql` once. This creates new `coffee_*` tables and RPCs. Keep the SQL file for review; it does not contain a code or credentials.
+2. In its SQL Editor, run `supabase.sql` and then `drink-prices-migration.sql`. The second script adds the optional drink breakdown without changing older rounds. Keep the files for review; they contain no code or credentials.
 3. Generate a long random code in SQL Editor:
 
    ```sql
@@ -36,7 +37,11 @@ This is a **new app for a new Supabase project**. The currently deployed coffee 
 5. Serve these files over HTTPS as a static site. GitHub Pages works: put `index.html`, `styles.css`, `core.js`, `app.js`, and `config.js` at the repository root, then enable Pages from that branch. Do not replace the existing coffee repository's deployed branch unless you later decide to switch over.
 6. Open the new URL, enter your name and access code. The first successfully joined browser becomes the import admin. Add people manually or import the old data before creating new rounds. Share the new URL and code with members.
 
-Run `npm test` locally to check money calculations and legacy import preparation. In a disposable Supabase project, run `tests/schema-audit.sql` after the schema to verify RLS and grants. No build step is required.
+Run `npm test` locally to check money calculations and backup preparation. Run `tests/schema-audit.sql` after both SQL files to verify RLS and grants. No build step is required.
+
+## Updating an existing live board
+
+Apply `drink-prices-migration.sql` to the existing coffee Supabase project before publishing the updated HTML, CSS, and JavaScript. It adds a nullable `drink_items` column and a new member-only RPC. It does not edit existing rows or the shared access code. Verify the old round count and balances before and after.
 
 ## Bring over the old phone data
 

@@ -34,7 +34,7 @@
     </section>
 
     <div id="board-view" hidden>
-      <div class="intro"><div><span class="eyebrow">LIVE GROUP BOARD</span><h2>Keep the rounds fair.</h2><p>Each round’s real cost is shared between the people who were there.</p></div><button id="refresh" class="button-light" type="button">Refresh</button></div>
+      <div class="intro"><div><span class="eyebrow">LIVE GROUP BOARD</span><h2>Keep the rounds fair.</h2><p>Split a round equally or enter what each person’s drink cost.</p></div><button id="refresh" class="button-light" type="button">Refresh</button></div>
       <p id="board-message" class="message" role="status"></p>
       <div class="columns">
         <div>
@@ -44,14 +44,21 @@
             <div class="actions"><button id="select-all" class="button-light" type="button">Everyone in</button><button id="clear-all" class="button-light" type="button">Clear</button></div>
             <button id="preview" class="button-outline" type="button">Who’s round?</button>
             <div id="preview-box" class="preview" hidden></div>
-            <form id="round-form"><label>Total cost (£)<input id="round-cost" type="text" inputmode="decimal" placeholder="e.g. 9.60" required></label><button id="record-button" type="submit">Record round</button></form>
+            <form id="round-form">
+              <label>How to split the bill<select id="round-split"><option value="equal">Split equally</option><option value="drinks">Choose drinks and prices</option></select></label>
+              <div id="round-drinks" class="drink-list" hidden></div>
+              <label>Total paid (£)<input id="round-cost" type="text" inputmode="decimal" placeholder="e.g. 9.60" required></label>
+              <button id="record-button" type="submit">Record round</button>
+            </form>
           </section>
           <section class="panel" aria-labelledby="historic-title">
             <div class="section-head"><span class="step">02</span><div><h3 id="historic-title">Add an older round</h3><p>For payments made before you started using the live board.</p></div></div>
             <form id="historic-form">
               <div class="form-row"><label>Date<input id="historic-date" type="date" required></label><label>Buyer<select id="historic-buyer" required></select></label></div>
               <span class="field-label">Who was there?</span><div id="historic-attendees" class="chips"></div>
-              <label>Total cost (£)<input id="historic-cost" type="text" inputmode="decimal" placeholder="e.g. 12.40" required></label>
+              <label>How to split the bill<select id="historic-split"><option value="equal">Split equally</option><option value="drinks">Choose drinks and prices</option></select></label>
+              <div id="historic-drinks" class="drink-list" hidden></div>
+              <label>Total paid (£)<input id="historic-cost" type="text" inputmode="decimal" placeholder="e.g. 12.40" required></label>
               <button id="historic-button" type="submit">Save historic round</button>
             </form>
           </section>

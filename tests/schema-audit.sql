@@ -1,4 +1,4 @@
--- Read-only permission audit. Run after supabase.sql in a disposable Supabase project.
+-- Read-only permission audit. Run after supabase.sql and drink-prices-migration.sql.
 do $$
 declare t text; f text;
 begin
@@ -22,6 +22,7 @@ begin
     'coffee_join(text,text)','coffee_snapshot()','coffee_preview(uuid[])',
     'coffee_add_person(text)','coffee_archive_person(uuid)',
     'coffee_record_round(uuid,uuid[],integer,date,uuid)',
+    'coffee_record_round_itemized(uuid,uuid[],integer,date,uuid,jsonb)',
     'coffee_delete_round(uuid)','coffee_import_legacy(jsonb,jsonb)'
   ] loop
     if has_function_privilege('anon','public.' || f,'EXECUTE') then
@@ -35,6 +36,10 @@ begin
       raise exception 'RPC lacks pinned definer settings: %', f;
     end if;
   end loop;
+  if has_function_privilege('anon','private.coffee_validate_drinks(uuid[],integer,jsonb)','EXECUTE')
+     or has_function_privilege('authenticated','private.coffee_validate_drinks(uuid[],integer,jsonb)','EXECUTE') then
+    raise exception 'Drink validator is callable directly';
+  end if;
   raise notice 'Coffee permission audit passed';
 end $$;
 

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { fairRows, chooseBuyer, parsePence, prepareLegacy } from '../core.js';
+import { fairRows, chooseBuyer, parsePence, prepareBackup, prepareLegacy, validateDrinkItems } from '../core.js';
 
 const people = [
   {id:'00000000-0000-0000-0000-000000000001',name:'Matt',active:true},
@@ -48,5 +48,50 @@ test('legacy migration keeps removed participants as archived and reports unreco
 test('legacy migration rejects invalid dates and malformed data', () => {
   assert.throws(() => prepareLegacy({people:['Matt'],history:[{date:'31/02/2026',buyer:'Matt',attendees:['Matt'],cost:2}]}));
   assert.throws(() => prepareLegacy({people:['Matt'],history:[{date:'01/10/2026',buyer:'Matt',attendees:[],cost:2}]}));
+});
+
+test('individual drink prices change fair shares and the next buyer', () => {
+  const ids = people.map(person => person.id);
+  const drinks = [
+    {person_id:ids[0],drink:'latte',price_pence:500},
+    {person_id:ids[1],drink:'tea',price_pence:200},
+    {person_id:ids[2],drink:'latte',price_pence:500}
+  ];
+  assert.equal(validateDrinkItems(drinks,ids,1200),drinks);
+  const rows = fairRows(people,[{buyer_id:ids[0],attendee_ids:ids,cost_pence:1200,drink_items:drinks}]);
+  assert.deepEqual(rows.map(row => row.share_pence),[500,200,500]);
+  assert.deepEqual(rows.map(row => row.balance_pence),[700,-200,-500]);
+  assert.equal(chooseBuyer(rows,ids),ids[2]);
+  assert.equal(rows.reduce((sum,row) => sum + row.balance_pence,0),0);
+});
+
+test('drink list requires one valid price per attendee and must match the bill', () => {
+  const ids = [people[0].id,people[1].id];
+  const valid = [
+    {person_id:ids[0],drink:'americano',price_pence:300},
+    {person_id:ids[1],drink:'tea',price_pence:200}
+  ];
+  assert.throws(() => validateDrinkItems(valid,ids,600),/add up/);
+  assert.throws(() => validateDrinkItems([valid[0],valid[0]],ids,600));
+  assert.throws(() => validateDrinkItems([{...valid[0],drink:'mocha'},valid[1]],ids,500));
+  assert.throws(() => validateDrinkItems([valid[0]],ids,300));
+});
+
+test('live backup retains drink prices and archived people for import', () => {
+  const [matt,dan,kris] = people;
+  const backup = {format:'coffee-round-live-v1',people:[
+    {...matt,active:true},{...dan,active:true},{...kris,active:false}
+  ],rounds:[{round_date:'2026-11-25',buyer_id:matt.id,attendee_ids:[matt.id,dan.id],
+    cost_pence:700,drink_items:[
+      {person_id:matt.id,drink:'latte',price_pence:500},
+      {person_id:dan.id,drink:'tea',price_pence:200}
+    ]}]};
+  const prepared = prepareBackup(backup);
+  assert.deepEqual(prepared.people.map(person => person.active),[true,true,false]);
+  assert.deepEqual(prepared.rounds[0].drinks,[
+    {person:'Matt',drink:'latte',price_pence:500},
+    {person:'Dan',drink:'tea',price_pence:200}
+  ]);
+  assert.equal(prepared.rounds[0].cost_pence,700);
 });
 

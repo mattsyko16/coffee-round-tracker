@@ -1,4 +1,5 @@
 export const LEGACY_KEY = 'coffeeRoundTrackerLocalV3';
+export const DRINK_TYPES = ['tea', 'americano', 'latte'];
 export const money = pence => new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(pence / 100);
 
 export function parsePence(value, allowZero = false) {
@@ -10,6 +11,23 @@ export function parsePence(value, allowZero = false) {
   return result;
 }
 
+export function validateDrinkItems(items, attendeeIds, totalPence) {
+  const attendees = new Set(attendeeIds);
+  if (!Array.isArray(items) || items.length !== attendeeIds.length || attendees.size !== attendeeIds.length)
+    throw new Error('Choose one drink and price for each attendee.');
+  const seen = new Set();
+  let sum = 0;
+  for (const item of items) {
+    if (!attendees.has(item?.person_id) || seen.has(item.person_id) || !DRINK_TYPES.includes(item.drink)
+        || !Number.isInteger(item.price_pence) || item.price_pence < 1 || item.price_pence > 1000000)
+      throw new Error('Choose one valid drink and price for each attendee.');
+    seen.add(item.person_id);
+    sum += item.price_pence;
+  }
+  if (sum !== totalPence) throw new Error(`The drink prices add up to ${money(sum)}, but the bill is ${money(totalPence)}.`);
+  return items;
+}
+
 export function fairRows(people, rounds) {
   const rows = new Map(people.map(person => [person.id, {
     ...person, spent_pence: 0, share_pence: 0, bought: 0, attended: 0, balance_pence: 0
@@ -17,13 +35,20 @@ export function fairRows(people, rounds) {
   for (const round of rounds) {
     const buyer = rows.get(round.buyer_id);
     if (buyer) { buyer.spent_pence += round.cost_pence; buyer.bought++; }
-    const ids = [...round.attendee_ids].sort();
-    const base = Math.floor(round.cost_pence / ids.length);
-    const extra = round.cost_pence % ids.length;
-    ids.forEach((id, index) => {
-      const row = rows.get(id);
-      if (row) { row.share_pence += base + (index < extra ? 1 : 0); row.attended++; }
-    });
+    if (Array.isArray(round.drink_items)) {
+      round.drink_items.forEach(item => {
+        const row = rows.get(item.person_id);
+        if (row) { row.share_pence += item.price_pence; row.attended++; }
+      });
+    } else {
+      const ids = [...round.attendee_ids].sort();
+      const base = Math.floor(round.cost_pence / ids.length);
+      const extra = round.cost_pence % ids.length;
+      ids.forEach((id, index) => {
+        const row = rows.get(id);
+        if (row) { row.share_pence += base + (index < extra ? 1 : 0); row.attended++; }
+      });
+    }
   }
   return [...rows.values()].map(row => ({ ...row, balance_pence: row.spent_pence - row.share_pence }));
 }
@@ -60,6 +85,7 @@ export function prepareLegacy(raw) {
     all.set(key, { name: clean, active });
   };
   raw.people.forEach(name => add(name, true));
+  if (Array.isArray(raw.archivedPeople)) raw.archivedPeople.forEach(name => add(name, false));
   const rounds = raw.history.map((item, index) => {
     if (!item || !Array.isArray(item.attendees) || item.attendees.length < 1 || item.attendees.length > 50)
       throw new Error(`History row ${index + 1} has invalid attendees.`);
@@ -68,8 +94,28 @@ export function prepareLegacy(raw) {
     const attendeeNames = [...new Map(item.attendees.map(name => [name.trim().toLocaleLowerCase('en-GB'), name.trim()])).values()];
     if (!attendeeNames.some(name => name.toLocaleLowerCase('en-GB') === item.buyer.trim().toLocaleLowerCase('en-GB')))
       attendeeNames.push(item.buyer.trim());
+    const costPence = Number.isInteger(item.cost_pence) ? item.cost_pence : parsePence(item.cost ?? 0, true);
+    if (costPence < 0 || costPence > 1000000) throw new Error(`History row ${index + 1} has an invalid cost.`);
+    let drinks;
+    if (item.drinks != null) {
+      if (!Array.isArray(item.drinks)) throw new Error(`History row ${index + 1} has invalid drinks.`);
+      const byName = new Map(attendeeNames.map(name => [name.toLocaleLowerCase('en-GB'), name]));
+      const seen = new Set();
+      drinks = item.drinks.map(drink => {
+        const person = typeof drink?.person === 'string' ? drink.person.trim() : '';
+        const key = person.toLocaleLowerCase('en-GB');
+        if (!byName.has(key) || seen.has(key) || !DRINK_TYPES.includes(drink?.drink)
+            || !Number.isInteger(drink.price_pence) || drink.price_pence < 1 || drink.price_pence > 1000000)
+          throw new Error(`History row ${index + 1} has invalid drinks.`);
+        seen.add(key);
+        return { person: byName.get(key), drink: drink.drink, price_pence: drink.price_pence };
+      });
+      if (drinks.length !== attendeeNames.length || drinks.reduce((sum, drink) => sum + drink.price_pence, 0) !== costPence)
+        throw new Error(`History row ${index + 1} has drink prices that do not match its bill.`);
+    }
     return { date: legacyDate(item.date), buyer: item.buyer.trim(), attendees: attendeeNames,
-      cost_pence: parsePence(item.cost ?? 0, true), time: typeof item.time === 'string' ? item.time.slice(0,40) : '' };
+      cost_pence: costPence, time: typeof item.time === 'string' ? item.time.slice(0,40) : '',
+      ...(drinks ? { drinks } : {}) };
   });
   if (all.size < 1 || all.size > 50) throw new Error('Backup must contain 1 to 50 people.');
   const stats = raw.stats && typeof raw.stats === 'object' ? raw.stats : {};
@@ -88,5 +134,24 @@ export function prepareLegacy(raw) {
       discrepancies.push(name);
   }
   return { people: [...all.values()], rounds, discrepancies };
+}
+
+export function prepareBackup(raw) {
+  if (raw?.format !== 'coffee-round-live-v1') return prepareLegacy(raw);
+  if (!Array.isArray(raw.people) || !Array.isArray(raw.rounds)) throw new Error('Invalid live backup.');
+  const byId = new Map(raw.people.map(person => [person.id, person.name]));
+  return prepareLegacy({
+    people: raw.people.filter(person => person.active).map(person => person.name),
+    archivedPeople: raw.people.filter(person => !person.active).map(person => person.name),
+    history: raw.rounds.map(round => {
+      const [year, month, day] = round.round_date.split('-');
+      return { date: `${day}/${month}/${year}`, buyer: byId.get(round.buyer_id),
+        attendees: round.attendee_ids.map(id => byId.get(id)), cost_pence: round.cost_pence,
+        time: round.display_time || '',
+        ...(Array.isArray(round.drink_items) ? { drinks: round.drink_items.map(item => ({
+          person: byId.get(item.person_id), drink: item.drink, price_pence: item.price_pence
+        })) } : {}) };
+    })
+  });
 }
 
