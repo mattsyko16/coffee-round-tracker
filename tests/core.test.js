@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { fairRows, chooseBuyer, parsePence, prepareBackup, prepareLegacy, validateDrinkItems } from '../core.js';
+import { catalogPrice, fairRows, chooseBuyer, parsePence, prepareBackup, prepareCatalog, prepareLegacy, validateDrinkItems } from '../core.js';
 
 const people = [
   {id:'00000000-0000-0000-0000-000000000001',name:'Matt',active:true},
@@ -73,13 +73,34 @@ test('drink list requires one valid price per attendee and must match the bill',
   ];
   assert.throws(() => validateDrinkItems(valid,ids,600),/add up/);
   assert.throws(() => validateDrinkItems([valid[0],valid[0]],ids,600));
-  assert.throws(() => validateDrinkItems([{...valid[0],drink:'mocha'},valid[1]],ids,500));
+  assert.equal(validateDrinkItems([{...valid[0],drink:'Flat white'},valid[1]],ids,500).length,2);
+  assert.throws(() => validateDrinkItems([{...valid[0],drink:'\n'},valid[1]],ids,500));
   assert.throws(() => validateDrinkItems([valid[0]],ids,300));
+});
+
+test('the shared price list supplies current defaults without changing recorded prices', () => {
+  const catalog = [
+    {name:'Tea',price_pence:210,active:true},
+    {name:'Latte',price_pence:430,active:true},
+    {name:'Flat white',price_pence:null,active:true},
+    {name:'Old drink',price_pence:300,active:false}
+  ];
+  assert.equal(catalogPrice(catalog,'Tea'),'2.10');
+  assert.equal(catalogPrice(catalog,'Latte'),'4.30');
+  assert.equal(catalogPrice(catalog,'Flat white'),'');
+  assert.equal(catalogPrice(catalog,'Old drink'),'');
+  const [matt,dan] = people;
+  const rows = fairRows([matt,dan],[{buyer_id:matt.id,attendee_ids:[matt.id,dan.id],cost_pence:600,
+    drink_items:[{person_id:matt.id,drink:'Latte',price_pence:400},{person_id:dan.id,drink:'Tea',price_pence:200}]}]);
+  assert.deepEqual(rows.map(row => row.share_pence),[400,200]);
 });
 
 test('live backup retains drink prices and archived people for import', () => {
   const [matt,dan,kris] = people;
-  const backup = {format:'coffee-round-live-v1',people:[
+  const backup = {format:'coffee-round-live-v1',catalog:[
+    {name:'Tea',price_pence:210,active:true},
+    {name:'Flat white',price_pence:390,active:true}
+  ],people:[
     {...matt,active:true},{...dan,active:true},{...kris,active:false}
   ],rounds:[{round_date:'2026-11-25',buyer_id:matt.id,attendee_ids:[matt.id,dan.id],
     cost_pence:700,drink_items:[
@@ -93,5 +114,16 @@ test('live backup retains drink prices and archived people for import', () => {
     {person:'Dan',drink:'tea',price_pence:200}
   ]);
   assert.equal(prepared.rounds[0].cost_pence,700);
+  assert.deepEqual(prepared.catalog,backup.catalog);
+});
+
+test('drink catalog backup rejects duplicate and invalid prices', () => {
+  assert.deepEqual(prepareCatalog([{name:' Flat white ',price_pence:390,active:true}]),
+    [{name:'Flat white',price_pence:390,active:true}]);
+  assert.throws(() => prepareCatalog([
+    {name:'Tea',price_pence:200,active:true},
+    {name:'tea',price_pence:210,active:true}
+  ]));
+  assert.throws(() => prepareCatalog([{name:'Tea',price_pence:-1,active:true}]));
 });
 

@@ -13,3 +13,18 @@
 .drink-row select,.drink-row input{margin-top:5px}
 @media(max-width:420px){.drink-list{padding:10px}.drink-row{gap:7px;grid-template-columns:minmax(0,1fr) minmax(105px,.7fr)}}
 
+/* Shared drink price list */
+.price-panel{margin-top:5px}
+.drink-price-row{display:grid;grid-template-columns:minmax(120px,1fr) minmax(230px,2fr) auto;align-items:end;gap:14px;padding:12px 0;border-bottom:1px solid var(--line)}
+.drink-price-row strong{align-self:center;overflow-wrap:anywhere}
+.price-edit-form{display:flex;align-items:end;gap:8px;min-width:0}
+.price-edit-form label{flex:1;min-width:0;margin:0;font-size:14px}
+.price-edit-form input{margin-top:5px}
+.price-edit-form button{white-space:nowrap}
+.drink-price-row>.text-button{align-self:center}
+.drink-add-form{display:grid;grid-template-columns:minmax(0,2fr) minmax(120px,1fr) auto;gap:10px;align-items:end;margin:18px 0 12px}
+.drink-add-form label{margin:0}
+.drink-add-form button{white-space:nowrap}
+@media(max-width:760px){.drink-price-row{grid-template-columns:1fr auto;gap:5px 8px}.drink-price-row strong{grid-column:1}.drink-price-row .price-edit-form{grid-column:1/-1;grid-row:2}.drink-price-row>.text-button{grid-column:2;grid-row:1}.drink-add-form{grid-template-columns:1fr 1fr}.drink-add-form button{grid-column:1/-1}}
+@media(max-width:420px){.price-edit-form{flex-wrap:wrap}.price-edit-form label{flex-basis:100%}.price-edit-form button{width:100%}.drink-add-form{grid-template-columns:1fr}.drink-add-form button{grid-column:1}}
+

@@ -1,6 +1,12 @@
 export const LEGACY_KEY = 'coffeeRoundTrackerLocalV3';
-export const DRINK_TYPES = ['tea', 'americano', 'latte'];
 export const money = pence => new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(pence / 100);
+export const validDrinkName = value => typeof value === 'string'
+  && value.trim().length >= 1 && value.trim().length <= 80 && !/[\x00-\x1f\x7f]/.test(value);
+export const catalogPrice = (catalog, name) => {
+  const drink = catalog.find(item => item.active && item.name === name);
+  return Number.isInteger(drink?.price_pence) && drink.price_pence > 0
+    ? (drink.price_pence / 100).toFixed(2) : '';
+};
 
 export function parsePence(value, allowZero = false) {
   const raw = String(value).trim();
@@ -18,7 +24,7 @@ export function validateDrinkItems(items, attendeeIds, totalPence) {
   const seen = new Set();
   let sum = 0;
   for (const item of items) {
-    if (!attendees.has(item?.person_id) || seen.has(item.person_id) || !DRINK_TYPES.includes(item.drink)
+    if (!attendees.has(item?.person_id) || seen.has(item.person_id) || !validDrinkName(item.drink)
         || !Number.isInteger(item.price_pence) || item.price_pence < 1 || item.price_pence > 1000000)
       throw new Error('Choose one valid drink and price for each attendee.');
     seen.add(item.person_id);
@@ -104,7 +110,7 @@ export function prepareLegacy(raw) {
       drinks = item.drinks.map(drink => {
         const person = typeof drink?.person === 'string' ? drink.person.trim() : '';
         const key = person.toLocaleLowerCase('en-GB');
-        if (!byName.has(key) || seen.has(key) || !DRINK_TYPES.includes(drink?.drink)
+        if (!byName.has(key) || seen.has(key) || !validDrinkName(drink?.drink)
             || !Number.isInteger(drink.price_pence) || drink.price_pence < 1 || drink.price_pence > 1000000)
           throw new Error(`History row ${index + 1} has invalid drinks.`);
         seen.add(key);
@@ -136,11 +142,26 @@ export function prepareLegacy(raw) {
   return { people: [...all.values()], rounds, discrepancies };
 }
 
+export function prepareCatalog(raw) {
+  if (!Array.isArray(raw) || raw.length > 100) throw new Error('Invalid drink price list.');
+  const seen = new Set();
+  return raw.map(item => {
+    const name = typeof item?.name === 'string' ? item.name.trim() : '';
+    const key = name.toLocaleLowerCase('en-GB');
+    if (!validDrinkName(name) || seen.has(key) || typeof item.active !== 'boolean'
+        || (item.price_pence !== null && (!Number.isInteger(item.price_pence)
+          || item.price_pence < 1 || item.price_pence > 1000000)))
+      throw new Error('Invalid drink price list.');
+    seen.add(key);
+    return { name, price_pence: item.price_pence, active: item.active };
+  });
+}
+
 export function prepareBackup(raw) {
   if (raw?.format !== 'coffee-round-live-v1') return prepareLegacy(raw);
   if (!Array.isArray(raw.people) || !Array.isArray(raw.rounds)) throw new Error('Invalid live backup.');
   const byId = new Map(raw.people.map(person => [person.id, person.name]));
-  return prepareLegacy({
+  const prepared = prepareLegacy({
     people: raw.people.filter(person => person.active).map(person => person.name),
     archivedPeople: raw.people.filter(person => !person.active).map(person => person.name),
     history: raw.rounds.map(round => {
@@ -153,5 +174,7 @@ export function prepareBackup(raw) {
         })) } : {}) };
     })
   });
+  if (raw.catalog != null) prepared.catalog = prepareCatalog(raw.catalog);
+  return prepared;
 }
 

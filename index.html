@@ -78,6 +78,17 @@
           </section>
         </div>
       </div>
+      <section class="panel price-panel" aria-labelledby="prices-title">
+        <div class="section-head"><span class="step">07</span><div><h3 id="prices-title">Drink prices</h3><p>Shared prices for everyone. Changing a price only affects new rounds.</p></div></div>
+        <p id="price-message" class="message" role="status"></p>
+        <div id="drink-price-list"></div>
+        <form id="drink-add-form" class="drink-add-form">
+          <label>New drink<input id="new-drink-name" maxlength="80" placeholder="e.g. Flat white" required></label>
+          <label>Price (£)<input id="new-drink-price" type="text" inputmode="decimal" placeholder="e.g. 3.50" required></label>
+          <button id="add-drink-button" type="submit">Add drink</button>
+        </form>
+        <p class="small">The dropdowns above use this list. You can still change a person’s price for an individual round.</p>
+      </section>
       <footer>Shared with your group · <span id="version-label"></span></footer>
     </div>
   </main>
