@@ -3,7 +3,8 @@ import { LEGACY_KEY, catalogPrice, money, parsePence, prepareBackup, prepareLega
 const $ = id => document.getElementById(id);
 const config = window.COFFEE_CONFIG || {};
 const state = { client: null, snapshot: null, channel: null, pending: null, prepared: null, loading: false,
-  drinkDrafts: { round: new Map(), historic: new Map() }, priceDrafts: new Map() };
+  drinkDrafts: { round: new Map(), historic: new Map() }, priceDrafts: new Map(),
+  totalAuto: { round: true, historic: true } };
 const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; };
 const nameOf = id => state.snapshot?.people.find(person => person.id === id)?.name || 'Unknown person';
 const active = () => state.snapshot?.people.filter(person => person.active) || [];
@@ -19,6 +20,33 @@ function show(view) { for (const name of ['setup','join','board']) $(`${name}-vi
 async function rpc(name, args = {}) { const { data, error } = await state.client.rpc(name, args); if (error) throw new Error(error.message || 'The request failed.'); return data; }
 function selected(container) { return [...$(container).querySelectorAll('input:checked')].map(input => input.value); }
 function clearPreview() { $('preview-box').hidden = true; $('preview-box').classList.remove('success'); }
+
+function syncDrinkTotal(mode) {
+  const enabled = $(`${mode}-split`).value === 'drinks';
+  $(`${mode}-total-help`).hidden = !enabled;
+  if (!enabled) return;
+  const ids = selected(mode === 'round' ? 'today-attendees' : 'historic-attendees');
+  const prices = ids.map(id => {
+    try { return parsePence(state.drinkDrafts[mode].get(id)?.price ?? ''); }
+    catch { return null; }
+  });
+  const complete = ids.length > 0 && prices.every(price => price !== null);
+  const totalInput = $(`${mode}-cost`);
+  const status = $(`${mode}-subtotal`);
+  if (!complete) {
+    if (state.totalAuto[mode]) totalInput.value = '';
+    status.textContent = 'Enter a price for each attendee to calculate the total.';
+    return;
+  }
+  const subtotal = prices.reduce((sum, price) => sum + price, 0);
+  if (state.totalAuto[mode]) totalInput.value = (subtotal / 100).toFixed(2);
+  let actual;
+  try { actual = parsePence(totalInput.value); }
+  catch { status.textContent = `Drink subtotal ${money(subtotal)}. Enter the actual total paid.`; return; }
+  const difference = actual - subtotal;
+  status.textContent = difference === 0 ? `Drink subtotal ${money(subtotal)}.`
+    : `Drink subtotal ${money(subtotal)}. ${difference > 0 ? 'Extra' : 'Discount'} ${money(Math.abs(difference))} shared equally.`;
+}
 
 function attendeeChips(container, className, selectedIds = []) {
   const host = $(container); host.replaceChildren();
@@ -36,10 +64,10 @@ function renderDrinkRows(mode) {
   const host = $(`${mode}-drinks`), enabled = $(`${mode}-split`).value === 'drinks';
   host.hidden = !enabled;
   host.replaceChildren();
-  if (!enabled) return;
+  if (!enabled) { syncDrinkTotal(mode); return; }
   const ids = selected(mode === 'round' ? 'today-attendees' : 'historic-attendees');
-  if (!ids.length) { host.append(node('p', 'empty', 'Tick who was there to choose their drinks.')); return; }
-  host.append(node('p', 'small', 'Choose one drink and enter its price for each person. The prices must add up to the total paid.'));
+  if (!ids.length) { host.append(node('p', 'empty', 'Tick who was there to choose their drinks.')); syncDrinkTotal(mode); return; }
+  host.append(node('p', 'small', 'Choose a drink for each person. The total fills in automatically; you can change it to match the receipt.'));
   for (const id of ids) {
     const draft = state.drinkDrafts[mode].get(id) || { drink: '', price: '' };
     const row = node('div', 'drink-row');
@@ -54,6 +82,7 @@ function renderDrinkRows(mode) {
       const price = catalogPrice(state.snapshot?.drinks || [], typeSelect.value);
       state.drinkDrafts[mode].set(id, { drink: typeSelect.value, price });
       priceInput.value = price;
+      syncDrinkTotal(mode);
     });
     typeLabel.append(typeSelect);
     const priceLabel = node('label', '', 'Price (£)');
@@ -61,10 +90,12 @@ function renderDrinkRows(mode) {
     priceInput.type = 'text'; priceInput.inputMode = 'decimal'; priceInput.placeholder = 'e.g. 2.50'; priceInput.value = draft.price;
     priceInput.addEventListener('input', () => {
       state.drinkDrafts[mode].set(id, { ...state.drinkDrafts[mode].get(id), price: priceInput.value });
+      syncDrinkTotal(mode);
     });
     priceLabel.append(priceInput);
     row.append(typeLabel, priceLabel); host.append(row);
   }
+  syncDrinkTotal(mode);
 }
 
 function collectDrinkItems(mode, ids, totalPence) {
@@ -171,6 +202,8 @@ function renderHistory() {
     if (Array.isArray(round.drink_items)) {
       row.append(node('div', 'sub', round.drink_items.map(item =>
         `${nameOf(item.person_id)}: ${item.drink[0].toUpperCase() + item.drink.slice(1)} ${money(item.price_pence)}`).join(' · ')));
+      const difference = round.cost_pence - round.drink_items.reduce((sum, item) => sum + item.price_pence, 0);
+      if (difference) row.append(node('div', 'sub', `${difference > 0 ? 'Extra' : 'Discount'} ${money(Math.abs(difference))} shared equally among attendees.`));
     }
     const button = node('button','text-button','Delete round'); button.type = 'button';
     button.addEventListener('click', async () => {
@@ -266,6 +299,7 @@ async function saveRound(event, historic) {
     await load();
     $(historic ? 'historic-cost' : 'round-cost').value = '';
     state.drinkDrafts[mode].clear();
+    state.totalAuto[mode] = true;
     if (historic) { $('historic-buyer').value = ''; $('historic-attendees').querySelectorAll('input').forEach(input => input.checked = false); }
     renderDrinkRows(mode);
     const box = $('preview-box'); box.replaceChildren();
@@ -334,8 +368,22 @@ async function init() {
   $('refresh').addEventListener('click',() => { void load().catch(() => {}); });
   $('select-all').addEventListener('click',() => { $('today-attendees').querySelectorAll('input').forEach(input => input.checked = true); clearPreview(); renderDrinkRows('round'); });
   $('clear-all').addEventListener('click',() => { $('today-attendees').querySelectorAll('input').forEach(input => input.checked = false); clearPreview(); renderDrinkRows('round'); });
-  $('round-split').addEventListener('change', () => renderDrinkRows('round'));
-  $('historic-split').addEventListener('change', () => renderDrinkRows('historic'));
+  for (const mode of ['round', 'historic']) {
+    $(`${mode}-split`).addEventListener('change', () => {
+      if ($(`${mode}-split`).value === 'drinks') state.totalAuto[mode] = true;
+      renderDrinkRows(mode);
+    });
+    $(`${mode}-cost`).addEventListener('input', () => {
+      if ($(`${mode}-split`).value === 'drinks') {
+        state.totalAuto[mode] = false;
+        syncDrinkTotal(mode);
+      }
+    });
+    $(`${mode}-use-subtotal`).addEventListener('click', () => {
+      state.totalAuto[mode] = true;
+      syncDrinkTotal(mode);
+    });
+  }
   $('historic-buyer').addEventListener('change', () => {
     const id = $('historic-buyer').value;
     if (id) {
@@ -393,4 +441,3 @@ async function init() {
 }
 
 void init();
-

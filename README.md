@@ -7,7 +7,7 @@ This is a **new app for a new Supabase project**. The currently deployed coffee 
 ## What it does
 
 - Records a buyer, date, actual cost, and exact attendees for each round.
-- New rounds can split equally or assign a drink and an editable price to each attendee. The shared price list starts with Tea, Americano, and Latte; members can set their current prices or add more drink types. Choosing a drink fills its current price. Drink prices must add up to the total paid. Older rounds continue their original equal split.
+- New rounds can split equally or assign a drink and an editable price to each attendee. The shared price list starts with Tea, Americano, and Latte; members can set their current prices or add more drink types. Choosing a drink fills its current price. The total paid updates from the drink prices automatically, and can be overwritten to match the receipt. Any extra charge or discount is split equally between attendees, with odd pennies assigned in a fixed person ID order. Older rounds continue their original equal split.
 - Calculates each attendee's share in integer pennies. For equal splits, odd pennies go to attendee IDs in a fixed order, so the round's shares always add to its cost.
 - Shows fair balance as **paid minus share**. Positive is ahead; negative is behind.
 - Previews the most-behind present person before saving. The database chooses again inside a locked transaction at save time, so simultaneous phones cannot both rely on a stale preview. The saved buyer is shown afterward.
@@ -18,7 +18,7 @@ This is a **new app for a new Supabase project**. The currently deployed coffee 
 ## Owner setup
 
 1. Create a **new** Supabase project. In **Authentication → Providers**, enable **Anonymous Sign-Ins**. Do not reuse the Empty Threats project or any currently deployed coffee database.
-2. In its SQL Editor, run `supabase.sql`, `drink-prices-migration.sql`, `drink-catalog-migration.sql`, then `drink-catalog-compatibility.sql`. The additions keep older rounds intact. Keep the files for review; they contain no access code or credentials.
+2. In its SQL Editor, run `supabase.sql`, `drink-prices-migration.sql`, `drink-catalog-migration.sql`, `drink-catalog-compatibility.sql`, then `round-total-adjustment-migration.sql`. The additions keep older rounds intact. Keep the files for review; they contain no access code or credentials.
 3. Generate a long random code in SQL Editor:
 
    ```sql
@@ -41,7 +41,7 @@ Run `npm test` locally to check money calculations and backup preparation. Run `
 
 ## Updating an existing live board
 
-For a board that already has `drink-prices-migration.sql`, apply `drink-catalog-migration.sql` and `drink-catalog-compatibility.sql` before publishing the updated HTML, CSS, and JavaScript. They add a shared `coffee_drinks` table, seed three drink names with unset prices, and add member-only price-list RPCs. They do not edit existing rounds or the shared access code. Verify the round count and balances before and after.
+For a board that already has the shared drink price list, apply `round-total-adjustment-migration.sql` before publishing the updated HTML, CSS, and JavaScript. It changes only the validation and balance calculations; it does not edit existing rounds or the shared access code. Verify the round count and balances before and after.
 
 ## Bring over the old phone data
 
@@ -63,4 +63,3 @@ The import is atomic: an invalid row fails the whole transaction, and an already
 ## Source references
 
 This implementation follows the [existing coffee tracker](https://github.com/mattsyko16/coffee-round-tracker) for features and the [Empty Threats Song Chooser](https://github.com/mattsyko16/Empty-Threats-Song-Chooser) for anonymous sessions and server-side code verification. Its database permissions and serialized round writes are specific to this app.
-

@@ -22,16 +22,30 @@ export function validateDrinkItems(items, attendeeIds, totalPence) {
   if (!Array.isArray(items) || items.length !== attendeeIds.length || attendees.size !== attendeeIds.length)
     throw new Error('Choose one drink and price for each attendee.');
   const seen = new Set();
-  let sum = 0;
   for (const item of items) {
     if (!attendees.has(item?.person_id) || seen.has(item.person_id) || !validDrinkName(item.drink)
         || !Number.isInteger(item.price_pence) || item.price_pence < 1 || item.price_pence > 1000000)
       throw new Error('Choose one valid drink and price for each attendee.');
     seen.add(item.person_id);
-    sum += item.price_pence;
   }
-  if (sum !== totalPence) throw new Error(`The drink prices add up to ${money(sum)}, but the bill is ${money(totalPence)}.`);
+  allocateDrinkShares(items, totalPence);
   return items;
+}
+
+export function allocateDrinkShares(items, totalPence) {
+  if (!Array.isArray(items) || !items.length || !Number.isInteger(totalPence))
+    throw new Error('Choose drinks and a valid total.');
+  const subtotal = items.reduce((sum, item) => sum + item.price_pence, 0);
+  const difference = totalPence - subtotal;
+  const each = Math.floor(difference / items.length);
+  const penniesLeft = difference - each * items.length;
+  const ordered = [...items].sort((a,b) => a.person_id < b.person_id ? -1 : a.person_id > b.person_id ? 1 : 0);
+  const shares = new Map(ordered.map((item,index) => [
+    item.person_id, item.price_pence + each + (index < penniesLeft ? 1 : 0)
+  ]));
+  if ([...shares.values()].some(share => share < 0))
+    throw new Error('That discount would make a person’s share negative. Adjust the total or drink prices.');
+  return items.map(item => ({ ...item, share_pence: shares.get(item.person_id) }));
 }
 
 export function fairRows(people, rounds) {
@@ -42,9 +56,9 @@ export function fairRows(people, rounds) {
     const buyer = rows.get(round.buyer_id);
     if (buyer) { buyer.spent_pence += round.cost_pence; buyer.bought++; }
     if (Array.isArray(round.drink_items)) {
-      round.drink_items.forEach(item => {
+      allocateDrinkShares(round.drink_items, round.cost_pence).forEach(item => {
         const row = rows.get(item.person_id);
-        if (row) { row.share_pence += item.price_pence; row.attended++; }
+        if (row) { row.share_pence += item.share_pence; row.attended++; }
       });
     } else {
       const ids = [...round.attendee_ids].sort();
@@ -116,8 +130,8 @@ export function prepareLegacy(raw) {
         seen.add(key);
         return { person: byName.get(key), drink: drink.drink, price_pence: drink.price_pence };
       });
-      if (drinks.length !== attendeeNames.length || drinks.reduce((sum, drink) => sum + drink.price_pence, 0) !== costPence)
-        throw new Error(`History row ${index + 1} has drink prices that do not match its bill.`);
+      if (drinks.length !== attendeeNames.length)
+        throw new Error(`History row ${index + 1} has a missing drink.`);
     }
     return { date: legacyDate(item.date), buyer: item.buyer.trim(), attendees: attendeeNames,
       cost_pence: costPence, time: typeof item.time === 'string' ? item.time.slice(0,40) : '',
@@ -177,4 +191,3 @@ export function prepareBackup(raw) {
   if (raw.catalog != null) prepared.catalog = prepareCatalog(raw.catalog);
   return prepared;
 }
-

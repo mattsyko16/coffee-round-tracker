@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { catalogPrice, fairRows, chooseBuyer, parsePence, prepareBackup, prepareCatalog, prepareLegacy, validateDrinkItems } from '../core.js';
+import { allocateDrinkShares, catalogPrice, fairRows, chooseBuyer, parsePence, prepareBackup, prepareCatalog, prepareLegacy, validateDrinkItems } from '../core.js';
 
 const people = [
   {id:'00000000-0000-0000-0000-000000000001',name:'Matt',active:true},
@@ -65,17 +65,34 @@ test('individual drink prices change fair shares and the next buyer', () => {
   assert.equal(rows.reduce((sum,row) => sum + row.balance_pence,0),0);
 });
 
-test('drink list requires one valid price per attendee and must match the bill', () => {
+test('drink list requires one valid price per attendee and accepts an adjusted bill', () => {
   const ids = [people[0].id,people[1].id];
   const valid = [
     {person_id:ids[0],drink:'americano',price_pence:300},
     {person_id:ids[1],drink:'tea',price_pence:200}
   ];
-  assert.throws(() => validateDrinkItems(valid,ids,600),/add up/);
+  assert.equal(validateDrinkItems(valid,ids,600),valid);
   assert.throws(() => validateDrinkItems([valid[0],valid[0]],ids,600));
   assert.equal(validateDrinkItems([{...valid[0],drink:'Flat white'},valid[1]],ids,500).length,2);
   assert.throws(() => validateDrinkItems([{...valid[0],drink:'\n'},valid[1]],ids,500));
   assert.throws(() => validateDrinkItems([valid[0]],ids,300));
+});
+
+test('an overwritten total shares extras, discounts and odd pennies equally', () => {
+  const ids = people.map(person => person.id);
+  const drinks = [
+    {person_id:ids[2],drink:'latte',price_pence:500},
+    {person_id:ids[1],drink:'tea',price_pence:200},
+    {person_id:ids[0],drink:'latte',price_pence:500}
+  ];
+  const byPerson = items => [...items].sort((a,b) => a.person_id.localeCompare(b.person_id)).map(item => item.share_pence);
+  assert.deepEqual(byPerson(allocateDrinkShares(drinks,1301)),[534,234,533]);
+  assert.deepEqual(byPerson(allocateDrinkShares(drinks,1099)),[467,166,466]);
+  const rows = fairRows(people,[{buyer_id:ids[0],attendee_ids:ids,cost_pence:1301,drink_items:drinks}]);
+  assert.deepEqual(rows.map(row => row.share_pence),[534,234,533]);
+  assert.equal(rows.reduce((sum,row) => sum + row.balance_pence,0),0);
+  assert.equal(chooseBuyer(rows,ids),ids[2]);
+  assert.throws(() => validateDrinkItems(drinks,ids,1),/negative/);
 });
 
 test('the shared price list supplies current defaults without changing recorded prices', () => {
@@ -103,7 +120,7 @@ test('live backup retains drink prices and archived people for import', () => {
   ],people:[
     {...matt,active:true},{...dan,active:true},{...kris,active:false}
   ],rounds:[{round_date:'2026-11-25',buyer_id:matt.id,attendee_ids:[matt.id,dan.id],
-    cost_pence:700,drink_items:[
+    cost_pence:750,drink_items:[
       {person_id:matt.id,drink:'latte',price_pence:500},
       {person_id:dan.id,drink:'tea',price_pence:200}
     ]}]};
@@ -113,7 +130,7 @@ test('live backup retains drink prices and archived people for import', () => {
     {person:'Matt',drink:'latte',price_pence:500},
     {person:'Dan',drink:'tea',price_pence:200}
   ]);
-  assert.equal(prepared.rounds[0].cost_pence,700);
+  assert.equal(prepared.rounds[0].cost_pence,750);
   assert.deepEqual(prepared.catalog,backup.catalog);
 });
 
@@ -126,4 +143,3 @@ test('drink catalog backup rejects duplicate and invalid prices', () => {
   ]));
   assert.throws(() => prepareCatalog([{name:'Tea',price_pence:-1,active:true}]));
 });
-

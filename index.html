@@ -48,6 +48,7 @@
               <label>How to split the bill<select id="round-split"><option value="equal">Split equally</option><option value="drinks">Choose drinks and prices</option></select></label>
               <div id="round-drinks" class="drink-list" hidden></div>
               <label>Total paid (£)<input id="round-cost" type="text" inputmode="decimal" placeholder="e.g. 9.60" required></label>
+              <div id="round-total-help" class="total-help" hidden><span id="round-subtotal" role="status"></span><button id="round-use-subtotal" class="text-button" type="button">Use drink subtotal</button></div>
               <button id="record-button" type="submit">Record round</button>
             </form>
           </section>
@@ -59,6 +60,7 @@
               <label>How to split the bill<select id="historic-split"><option value="equal">Split equally</option><option value="drinks">Choose drinks and prices</option></select></label>
               <div id="historic-drinks" class="drink-list" hidden></div>
               <label>Total paid (£)<input id="historic-cost" type="text" inputmode="decimal" placeholder="e.g. 12.40" required></label>
+              <div id="historic-total-help" class="total-help" hidden><span id="historic-subtotal" role="status"></span><button id="historic-use-subtotal" class="text-button" type="button">Use drink subtotal</button></div>
               <button id="historic-button" type="submit">Save historic round</button>
             </form>
           </section>
@@ -94,4 +96,3 @@
   </main>
 </body>
 </html>
-
